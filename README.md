@@ -1,79 +1,145 @@
-🚀 DocAI
+# 🚀 DocAI
 
-AI-powered document workspace for intelligent PDF analysis, retrieval, and conversation.
+> **An AI-powered document workspace for summarizing, searching, and chatting with PDF documents using Retrieval-Augmented Generation (RAG).**
 
-DocAI is a full-stack AI application that enables users to upload PDF documents, ask natural language questions, generate summaries, extract key information, and interact with documents through a Retrieval-Augmented Generation (RAG) pipeline.
+DocAI is a production-style full-stack AI application that enables users to upload PDF documents, generate AI-powered summaries, ask questions in natural language, extract key information, and retrieve relevant document context through a modern Retrieval-Augmented Generation (RAG) pipeline.
 
-✨ Features
-📄 Document Processing
-Upload PDF documents
-Extract text from PDFs
-Multi-document support (coming soon)
-🤖 AI Capabilities
-AI-powered document summarization
-Question Answering (Q&A)
-Key information extraction
-Context-aware responses using RAG
-📌 Smart Retrieval
-Semantic search
-Citation & source references
-Highlight relevant document sections
-📤 Export
-Export conversation to Markdown
-Export reports to PDF (coming soon)
-🏗️ Tech Stack
-Frontend
-Next.js 15
-React
-TypeScript
-Tailwind CSS
-shadcn/ui
-Backend
-FastAPI
-Python
-AI
-Google Gemini
-LangChain
-Hugging Face Embeddings
-Qdrant Vector Database
-Infrastructure
-Docker
-Docker Compose
-📂 Project Structure
+---
+
+## ✨ Features
+
+### 📄 Document Processing
+
+- Upload PDF documents
+- Extract text from PDFs
+- Support multiple documents *(Coming Soon)*
+
+### 🤖 AI Capabilities
+
+- AI-powered document summarization
+- Natural language question answering
+- Key information extraction
+- Context-aware responses using RAG
+
+### 🔍 Smart Retrieval
+
+- Semantic search
+- Citation & source references
+- Highlight relevant document sections
+
+### 📤 Export
+
+- Export conversations to Markdown
+- Export reports to PDF *(Coming Soon)*
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+
+- Next.js 15
+- React
+- TypeScript
+- Tailwind CSS
+- shadcn/ui
+
+### Backend
+
+- FastAPI
+- Python
+
+### AI
+
+- Google Gemini
+- LangChain
+- Hugging Face Embeddings
+- Qdrant
+
+### Infrastructure
+
+- Docker
+- Docker Compose
+
+---
+
+## 📂 Project Structure
+
+```text
 doc-ai/
 ├── backend/
 ├── frontend/
 ├── README.md
 ├── .gitignore
+├── LICENSE
 └── docker-compose.yml
-🚀 Roadmap
+```
 
-Project initialization
+---
 
-FastAPI backend
+## 🚀 Roadmap
 
-Next.js frontend
+### Phase 1 — Foundation
 
-PDF upload
+- [x] Initialize project
+- [x] Setup FastAPI backend
+- [x] Setup Next.js frontend
+- [x] Configure Git & GitHub
+- [x] Create project documentation
 
-PDF parser
+### Phase 2 — Document Processing
 
-AI summarization
+- [ ] Upload PDF documents
+- [ ] Parse PDF content
+- [ ] Extract document text
 
-RAG pipeline
+### Phase 3 — AI Features
 
-Chat with documents
+- [ ] AI-powered summarization
+- [ ] Retrieval-Augmented Generation (RAG)
+- [ ] Chat with documents
+- [ ] Semantic search
 
-Citation & highlighting
+### Phase 4 — User Experience
 
-Authentication
+- [ ] Citation & highlighting
+- [ ] Export Markdown
+- [ ] Export PDF
+- [ ] Authentication
+- [ ] Workspace management
 
-Docker deployment
+### Phase 5 — Deployment
 
-🎯 Project Goal
+- [ ] Dockerize application
+- [ ] Production deployment
+- [ ] CI/CD pipeline
 
-The goal of DocAI is to build a production-ready AI document assistant that demonstrates modern AI engineering practices, including Retrieval-Augmented Generation (RAG), scalable backend architecture, and a professional full-stack web application.
+---
 
-📜 License
+## 🎯 Project Goal
 
-MIT License
+DocAI is built as a production-style AI application to demonstrate modern AI engineering practices, including Retrieval-Augmented Generation (RAG), scalable backend architecture, and full-stack application development.
+
+The project serves as both a practical AI document assistant and a portfolio project showcasing end-to-end AI engineering skills.
+
+---
+
+## 📌 Current Status
+
+🚧 **This project is under active development.**
+
+New features and improvements will be added incrementally following the roadmap.
+
+---
+
+## 🤝 Contributing
+
+Contributions, ideas, and feedback are welcome.
+
+Feel free to open an Issue or submit a Pull Request.
+
+---
+
+## 📜 License
+
+This project is licensed under the **MIT License**.
