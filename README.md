@@ -89,14 +89,14 @@ doc-ai/
 
 ### Phase 2 — Document Processing
 
-- [ ] Upload PDF documents
-- [ ] Parse PDF content
-- [ ] Extract document text
+- [x] Upload PDF documents
+- [x] Parse PDF content
+- [x] Extract document text
 
 ### Phase 3 — AI Features
 
-- [ ] AI-powered summarization
-- [ ] Retrieval-Augmented Generation (RAG)
+- [x] AI-powered summarization
+- [x] Retrieval-Augmented Generation (RAG)
 - [ ] Chat with documents
 - [ ] Semantic search
 
