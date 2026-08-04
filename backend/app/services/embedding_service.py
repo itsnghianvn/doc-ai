@@ -18,6 +18,7 @@ class EmbeddingService:
     def embed_chunks(self, chunks: list[dict]) -> list[dict]:
         embedded_chunks = []
         for chunk in chunks:
+            embedding = self.embed(chunk["content"])
             embedded_chunks.append({
                 **chunk,
                 "embedding": self.embed(chunk["content"])
