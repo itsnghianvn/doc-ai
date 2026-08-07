@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui/button";
+
 export default function Home() {
   return (
     <main className="flex min-h-screen flex-col items-center justify-center">
@@ -8,6 +10,10 @@ export default function Home() {
       <p className="mt-4 text-gray-600">
         Chat with your documents using AI.
       </p>
+
+      <Button className="mt-6">
+        Get Started
+      </Button>
     </main>
   );
 }
