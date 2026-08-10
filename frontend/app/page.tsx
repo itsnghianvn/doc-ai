@@ -1,33 +1,69 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { FileText, Upload, Loader2 } from "lucide-react";
+
 import { chatWithDocument, uploadDocument } from "@/lib/api";
-import { Button } from "@/components/ui/button";
+import { ChatWindow } from "@/components/chat/chat-window";
 
 type Message = {
   role: "user" | "assistant";
   content: string;
 };
 
-export default function Home() {
-  // Upload state
-  const [file, setFile] = useState<File | null>(null);
-  const [result, setResult] = useState<unknown>(null);
-  const [loading, setLoading] = useState(false);
+type UploadResult = {
+  filename?: string;
+  pages?: number;
+  characters?: number;
+  chunk_count?: number;
+  chunks?: unknown[];
+  preview?: string;
+};
 
-  // Chat state
+export default function Home() {
+  const [file, setFile] = useState<File | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<UploadResult | null>(null);
+
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [chatLoading, setChatLoading] = useState(false);
 
-  // Common error
   const [error, setError] = useState("");
 
-  const handleUpload = async () => {
-    console.log("🔥 UPLOAD CLICKED");
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-    if (!file) {
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({
+      behavior: "smooth",
+    });
+  }, [messages, chatLoading]);
+
+  const handleFileChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const selectedFile = event.target.files?.[0] ?? null;
+
+    setError("");
+    setResult(null);
+    setMessages([]);
+
+    if (!selectedFile) {
+      setFile(null);
+      return;
+    }
+
+    if (selectedFile.type !== "application/pdf") {
+      setFile(null);
       setError("Please select a PDF file.");
+      return;
+    }
+
+    setFile(selectedFile);
+  };
+
+  const handleUpload = async () => {
+    if (!file || loading) {
       return;
     }
 
@@ -35,187 +71,214 @@ export default function Home() {
       setLoading(true);
       setError("");
       setResult(null);
-
-      console.log("📄 Uploading:", file.name);
+      setMessages([]);
+      setQuestion("");
 
       const data = await uploadDocument(file);
 
-      console.log("✅ Upload success:", data);
-
       setResult(data);
     } catch (err) {
-      console.error("❌ Upload error:", err);
-      setError("Upload failed.");
+      console.error("Upload error:", err);
+      setError("Upload failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleChat = async () => {
-    if (!question.trim()) {
+    const userQuestion = question.trim();
+
+    if (!userQuestion || chatLoading || !result) {
       return;
     }
 
-  const userQuestion = question.trim();
+    try {
+      setChatLoading(true);
+      setError("");
 
-  try {
-    setChatLoading(true);
-    setError("");
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "user",
+          content: userQuestion,
+        },
+      ]);
 
-    // Add user message immediately
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "user",
-        content: userQuestion,
-      },
-    ]);
+      setQuestion("");
 
-    setQuestion("");
+      const data = await chatWithDocument(userQuestion);
 
-    console.log("💬 Question:", userQuestion);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: data.answer,
+        },
+      ]);
+    } catch (err) {
+      console.error("Chat error:", err);
+      setError("Failed to get an answer. Please try again.");
+    } finally {
+      setChatLoading(false);
+    }
+  };
 
-    const data = await chatWithDocument(userQuestion);
+  const handleKeyDown = (
+    event: React.KeyboardEvent<HTMLTextAreaElement>
+  ) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      handleChat();
+    }
+  };
 
-    console.log("✅ Chat response:", data);
-
-    // Add assistant message
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "assistant",
-        content: data.answer,
-      },
-    ]);
-  } catch (err) {
-    console.error("❌ Chat error:", err);
-    setError("Failed to get answer.");
-  } finally {
-    setChatLoading(false);
-  }
-};
   return (
     <main className="min-h-screen bg-zinc-50">
-      <div className="mx-auto flex min-h-screen w-full max-w-3xl flex-col px-6 py-16">
-
+      <div className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
         {/* Header */}
-        <h1 className="text-4xl font-bold tracking-tight text-zinc-900">
-          DocAI
-        </h1>
+        <header className="mb-8">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-black text-white">
+              <FileText size={20} />
+            </div>
 
-        <p className="mt-2 text-gray-600">
-          Upload a PDF and chat with your document using AI.
-        </p>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
+                DocAI
+              </h1>
 
-        {/* Upload */}
-        <div className="mt-8 rounded-xl border bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-zinc-900">
-            Upload Document
-          </h2>
-
-          <input
-            type="file"
-            accept=".pdf,application/pdf"
-            onChange={(event) => {
-              const selectedFile = event.target.files?.[0] ?? null;
-
-              setFile(selectedFile);
-              setError("");
-              setResult(null);
-              setMessages([]);
-            }}
-            className="mt-4 w-full"
-          />
-
-          {file && (
-            <p className="mt-3 text-sm text-gray-600">
-              Selected: {file.name}
-            </p>
-          )}
-
-          <Button
-            type="button"
-            onClick={handleUpload}
-            disabled={!file || loading}
-            className="mt-5"
-          >
-            {loading ? "Uploading..." : "Upload PDF"}
-          </Button>
-
-          {result && (
-            <div className="mt-5 rounded-lg bg-green-50 p-4">
-              <p className="font-medium text-green-700">
-                Document uploaded successfully.
-              </p>
-
-              <p className="mt-1 text-sm text-green-600">
-                {file?.name} · PDF processed successfully.
+              <p className="text-sm text-zinc-500">
+                AI-powered document assistant
               </p>
             </div>
-          )}
-        </div>
+          </div>
+        </header>
 
-        {/* Chat */}
-        <div className="mt-8 rounded-xl border bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-zinc-900">
-            Chat with your document
-          </h2>
+        {/* Upload Section */}
+        <section className="rounded-2xl border bg-white p-6 shadow-sm">
+          <div className="flex items-center gap-2">
+            <Upload size={18} />
 
-          <textarea
-            value={question}
-            onChange={(event) => setQuestion(event.target.value)}
-            placeholder="Ask something about your document..."
-            className="mt-4 min-h-32 w-full rounded-lg border border-zinc-200 p-3 text-sm text-zinc-900 outline-none focus:ring-2 focus:ring-zinc-400"
-          />
+            <h2 className="font-semibold text-zinc-900">
+              Upload document
+            </h2>
+          </div>
 
-          <Button
-            type="button"
-            onClick={handleChat}
-            disabled={!question.trim() || chatLoading}
-            className="mt-4"
-          >
-            {chatLoading ? "Thinking..." : "Ask"}
-          </Button>
+          <p className="mt-1 text-sm text-zinc-500">
+            Upload a PDF to start chatting with your document.
+          </p>
 
-          {messages.length > 0 && (
-  <div className="mt-6 space-y-4">
-    {messages.map((message, index) => (
-      <div
-        key={index}
-        className={`flex ${
-          message.role === "user"
-            ? "justify-end"
-            : "justify-start"
-        }`}
-      >
+          <div className="mt-5 rounded-xl border border-dashed border-zinc-300 p-5">
+            {/* File input */}
+            <input
+              type="file"
+              accept=".pdf,application/pdf"
+              onChange={handleFileChange}
+              disabled={loading}
+              className="w-full text-sm disabled:cursor-not-allowed disabled:opacity-50"
+            />
+
+            {/* Selected file */}
+            {file && (
+              <div className="mt-4 flex items-center gap-3 rounded-lg bg-zinc-50 p-3">
+                <FileText
+                  size={18}
+                  className="shrink-0 text-zinc-500"
+                />
+
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-zinc-800">
+                    {file.name}
+                  </p>
+
+                  <p className="text-xs text-zinc-500">
+                    PDF document
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Upload button */}
+            <button
+              type="button"
+              onClick={handleUpload}
+              disabled={!file || loading}
+              className="mt-4 inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-black px-4 text-sm font-medium text-white transition hover:bg-zinc-800 disabled:pointer-events-none disabled:opacity-50"
+            >
+              {loading ? (
+                <>
+                  <Loader2
+                    size={17}
+                    className="animate-spin"
+                  />
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <Upload size={17} />
+                  Upload PDF
+                </>
+              )}
+            </button>
+
+            {/* Upload success */}
+            {result && (
+              <div className="mt-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3">
+                <p className="text-sm font-medium text-green-700">
+                  Document uploaded successfully.
+                </p>
+
+                {result.filename && (
+                  <p className="mt-1 truncate text-xs text-green-600">
+                    {result.filename}
+                  </p>
+                )}
+
+                <div className="mt-2 flex gap-4 text-xs text-green-600">
+                  {result.pages !== undefined && (
+                    <span>
+                      Pages: {result.pages}
+                    </span>
+                  )}
+
+                  {result.chunk_count !== undefined && (
+                    <span>
+                      Chunks: {result.chunk_count}
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Chat Section */}
         <div
-          className={`max-w-[80%] rounded-xl px-4 py-3 ${
-            message.role === "user"
-              ? "bg-black text-white"
-              : "bg-zinc-100 text-zinc-900"
-          }`}
+          className={
+            !result
+              ? "pointer-events-none opacity-50"
+              : ""
+          }
         >
-          <p className="mb-1 text-xs font-medium opacity-60">
-            {message.role === "user" ? "You" : "DocAI"}
-          </p>
-
-          <p className="whitespace-pre-wrap text-sm leading-6">
-            {message.content}
-          </p>
-        </div>
-      </div>
-    ))}
-  </div>
-)}
+          <ChatWindow
+            messages={messages}
+            question={question}
+            chatLoading={chatLoading}
+            messagesEndRef={messagesEndRef}
+            onQuestionChange={setQuestion}
+            onChat={handleChat}
+            onKeyDown={handleKeyDown}
+          />
         </div>
 
         {/* Error */}
         {error && (
-          <p className="mt-4 text-sm text-red-500">
-            {error}
-          </p>
+          <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+            <p className="text-sm text-red-600">
+              {error}
+            </p>
+          </div>
         )}
-
       </div>
     </main>
   );
