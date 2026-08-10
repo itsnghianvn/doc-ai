@@ -132,6 +132,12 @@ export default function Home() {
     }
   };
 
+  const pdfUrl = result?.filename
+    ? `${process.env.NEXT_PUBLIC_API_URL}/upload/${encodeURIComponent(
+        result.filename
+      )}`
+    : null;
+
   return (
     <main className="min-h-screen bg-zinc-50">
       <div className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
@@ -252,23 +258,68 @@ export default function Home() {
           </div>
         </section>
 
-        {/* Chat Section */}
-        <div
-          className={
-            !result
-              ? "pointer-events-none opacity-50"
-              : ""
-          }
-        >
-          <ChatWindow
-            messages={messages}
-            question={question}
-            chatLoading={chatLoading}
-            messagesEndRef={messagesEndRef}
-            onQuestionChange={setQuestion}
-            onChat={handleChat}
-            onKeyDown={handleKeyDown}
-          />
+        {/* Document + Chat */}
+        <div className="mt-8 grid gap-6 lg:grid-cols-2">
+          {/* PDF Viewer */}
+          <section className="overflow-hidden rounded-2xl border bg-white shadow-sm">
+            <div className="border-b px-5 py-4">
+              <div className="flex items-center gap-2">
+                <FileText size={18} />
+
+                <h2 className="font-semibold text-zinc-900">
+                  Document
+                </h2>
+              </div>
+
+              {result?.filename && (
+                <p className="mt-1 truncate text-xs text-zinc-500">
+                  {result.filename}
+                </p>
+              )}
+            </div>
+
+            <div className="h-[650px] bg-zinc-100">
+              {pdfUrl ? (
+                <iframe
+                  src={pdfUrl}
+                  title="PDF document"
+                  className="h-full w-full border-0"
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center px-6 text-center">
+                  <div>
+                    <FileText
+                      size={40}
+                      className="mx-auto text-zinc-300"
+                    />
+
+                    <p className="mt-3 text-sm text-zinc-500">
+                      Upload a PDF to preview it here.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Chat */}
+          <div
+            className={
+              !result
+                ? "pointer-events-none opacity-50"
+                : ""
+            }
+          >
+            <ChatWindow
+              messages={messages}
+              question={question}
+              chatLoading={chatLoading}
+              messagesEndRef={messagesEndRef}
+              onQuestionChange={setQuestion}
+              onChat={handleChat}
+              onKeyDown={handleKeyDown}
+            />
+          </div>
         </div>
 
         {/* Error */}
