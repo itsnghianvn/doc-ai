@@ -7,25 +7,18 @@ import { chatWithDocument, uploadDocument } from "@/lib/api";
 import { ChatWindow } from "@/components/chat/chat-window";
 
 import type { Document } from "@/types/document";
+import { DocumentCard } from "@/components/document/document-card";
 
 type Message = {
   role: "user" | "assistant";
   content: string;
 };
 
-type UploadResult = {
-  filename?: string;
-  pages?: number;
-  characters?: number;
-  chunk_count?: number;
-  chunks?: unknown[];
-  preview?: string;
-};
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<UploadResult | null>(null);
+  const [result, setResult] = useState<Document | null>(null);
 
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
@@ -230,32 +223,16 @@ export default function Home() {
             </button>
 
             {/* Upload success */}
-            {result && (
-              <div className="mt-4 rounded-lg border border-green-200 bg-green-50 px-4 py-3">
-                <p className="text-sm font-medium text-green-700">
-                  Document uploaded successfully.
-                </p>
-
-                {result.filename && (
-                  <p className="mt-1 truncate text-xs text-green-600">
-                    {result.filename}
+              {result && (
+              <>
+                <div className="mt-4 rounded-lg bg-green-50 px-4 py-3">
+                  <p className="text-sm font-medium text-green-700">
+                    Document uploaded successfully.
                   </p>
-                )}
-
-                <div className="mt-2 flex gap-4 text-xs text-green-600">
-                  {result.pages !== undefined && (
-                    <span>
-                      Pages: {result.pages}
-                    </span>
-                  )}
-
-                  {result.chunk_count !== undefined && (
-                    <span>
-                      Chunks: {result.chunk_count}
-                    </span>
-                  )}
                 </div>
-              </div>
+
+                <DocumentCard document={result} />
+              </>
             )}
           </div>
         </section>
