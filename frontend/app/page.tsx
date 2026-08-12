@@ -10,6 +10,7 @@ import type { Document } from "@/types/document";
 import { DocumentCard } from "@/components/document/document-card";
 import { UploadDocument } from "@/components/document/upload-document";
 import { DocumentHeader } from "@/components/layout/document-header";
+import { DocumentList } from "@/components/document/document-list";
 
 type Message = {
   role: "user" | "assistant";
@@ -20,8 +21,8 @@ type Message = {
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<Document | null>(null);
-
+  const [documents, setDocuments] = useState<Document[]>([]);
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [chatLoading, setChatLoading] = useState(false);
@@ -42,7 +43,7 @@ export default function Home() {
     const selectedFile = event.target.files?.[0] ?? null;
 
     setError("");
-    setResult(null);
+    
     setMessages([]);
 
     if (!selectedFile) {
@@ -60,20 +61,23 @@ export default function Home() {
   };
 
   const handleUpload = async () => {
-    if (!file || loading) {
+    if (!file) {
+      setError("Please select a PDF file.");
       return;
     }
 
     try {
       setLoading(true);
       setError("");
-      setResult(null);
+      
       setMessages([]);
       setQuestion("");
 
       const data = await uploadDocument(file);
 
-      setResult(data);
+      setDocuments((prev) => [...prev, data]);
+      setSelectedDocument(data);
+      setMessages([]);
     } catch (err) {
       console.error("Upload error:", err);
       setError("Upload failed. Please try again.");
@@ -85,7 +89,7 @@ export default function Home() {
   const handleChat = async () => {
     const userQuestion = question.trim();
 
-    if (!userQuestion || chatLoading || !result) {
+    if (!userQuestion || chatLoading || !selectedDocument) {
       return;
     }
 
@@ -129,9 +133,9 @@ export default function Home() {
     }
   };
 
-  const pdfUrl = result?.filename
+  const pdfUrl = selectedDocument?.filename
     ? `${process.env.NEXT_PUBLIC_API_URL}/upload/${encodeURIComponent(
-        result.filename
+        selectedDocument.filename
       )}`
     : null;
 
@@ -145,14 +149,22 @@ export default function Home() {
         <UploadDocument
           file={file}
           loading={loading}
-          result={result}
           onFileChange={(selectedFile) => {
             setFile(selectedFile);
             setError("");
-            setResult(null);
             setMessages([]);
           }}
           onUpload={handleUpload}
+        />
+
+        <DocumentList
+          documents={documents}
+          selectedDocument={selectedDocument}
+          onSelect={(document) => {
+            setSelectedDocument(document);
+            setMessages([]);
+            setError("");
+          }}
         />
 
         {/* Document + Chat */}
@@ -168,9 +180,9 @@ export default function Home() {
                 </h2>
               </div>
 
-              {result?.filename && (
+              {selectedDocument?.filename && (
                 <p className="mt-1 truncate text-xs text-zinc-500">
-                  {result.filename}
+                  {selectedDocument.filename}
                 </p>
               )}
             </div>
@@ -202,7 +214,7 @@ export default function Home() {
           {/* Chat */}
           <div
             className={
-              !result
+              !selectedDocument
                 ? "pointer-events-none opacity-50"
                 : ""
             }

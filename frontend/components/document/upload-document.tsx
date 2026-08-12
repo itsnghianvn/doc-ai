@@ -7,7 +7,6 @@ import type { Document } from "@/types/document";
 type UploadDocumentProps = {
   file: File | null;
   loading: boolean;
-  result: Document | null;
   onFileChange: (file: File | null) => void;
   onUpload: () => void;
 };
@@ -15,7 +14,6 @@ type UploadDocumentProps = {
 export function UploadDocument({
   file,
   loading,
-  result,
   onFileChange,
   onUpload,
 }: UploadDocumentProps) {
@@ -87,13 +85,7 @@ export function UploadDocument({
           )}
         </button>
 
-        {result && (
-          <div className="mt-4 rounded-lg bg-green-50 px-4 py-3">
-            <p className="text-sm font-medium text-green-700">
-              Document uploaded successfully.
-            </p>
-          </div>
-        )}
+        
       </div>
     </section>
   );
