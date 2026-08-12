@@ -6,6 +6,8 @@ import { FileText, Upload, Loader2 } from "lucide-react";
 import { chatWithDocument, uploadDocument } from "@/lib/api";
 import { ChatWindow } from "@/components/chat/chat-window";
 
+import type { Document } from "@/types/document";
+
 type Message = {
   role: "user" | "assistant";
   content: string;
