@@ -9,6 +9,7 @@ import { ChatWindow } from "@/components/chat/chat-window";
 import type { Document } from "@/types/document";
 import { DocumentCard } from "@/components/document/document-card";
 import { UploadDocument } from "@/components/document/upload-document";
+import { DocumentHeader } from "@/components/layout/document-header";
 
 type Message = {
   role: "user" | "assistant";
@@ -138,23 +139,7 @@ export default function Home() {
     <main className="min-h-screen bg-zinc-50">
       <div className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
         {/* Header */}
-        <header className="mb-8">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-black text-white">
-              <FileText size={20} />
-            </div>
-
-            <div>
-              <h1 className="text-2xl font-bold tracking-tight text-zinc-900">
-                DocAI
-              </h1>
-
-              <p className="text-sm text-zinc-500">
-                AI-powered document assistant
-              </p>
-            </div>
-          </div>
-        </header>
+        <DocumentHeader />
 
         {/* Upload Section */}
         <UploadDocument
