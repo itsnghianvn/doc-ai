@@ -19,9 +19,13 @@ export const uploadDocument = async (file: File) => {
   return response.data;
 };
 
-export const chatWithDocument = async (question: string) => {
+export const chatWithDocument = async (
+  question: string,
+  documentId: string,
+) => {
   const response = await api.post("/chat", {
     question,
+    document_id: documentId,
   });
 
   return response.data;

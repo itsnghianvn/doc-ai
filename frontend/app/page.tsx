@@ -1,13 +1,12 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FileText, Upload, Loader2 } from "lucide-react";
+import { FileText } from "lucide-react";
 
-import { chatWithDocument, uploadDocument } from "@/lib/api";
+import { chatWithDocument } from "@/lib/api";
 import { ChatWindow } from "@/components/chat/chat-window";
 
 import type { Document } from "@/types/document";
-import { DocumentCard } from "@/components/document/document-card";
 import { UploadDocument } from "@/components/document/upload-document";
 import { DocumentHeader } from "@/components/layout/document-header";
 import { DocumentList } from "@/components/document/document-list";
@@ -17,12 +16,14 @@ type Message = {
   content: string;
 };
 
-
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+
   const [documents, setDocuments] = useState<Document[]>([]);
-  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const [selectedDocument, setSelectedDocument] =
+    useState<Document | null>(null);
+
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [chatLoading, setChatLoading] = useState(false);
@@ -37,28 +38,24 @@ export default function Home() {
     });
   }, [messages, chatLoading]);
 
-  const handleFileChange = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const selectedFile = event.target.files?.[0] ?? null;
+  const handleFileChange = (selectedFile: File | null) => {
+  setError("");
+  setMessages([]);
+  setQuestion("");
 
-    setError("");
-    
-    setMessages([]);
+  if (!selectedFile) {
+    setFile(null);
+    return;
+  }
 
-    if (!selectedFile) {
-      setFile(null);
-      return;
-    }
+  if (selectedFile.type !== "application/pdf") {
+    setFile(null);
+    setError("Please select a PDF file.");
+    return;
+  }
 
-    if (selectedFile.type !== "application/pdf") {
-      setFile(null);
-      setError("Please select a PDF file.");
-      return;
-    }
-
-    setFile(selectedFile);
-  };
+  setFile(selectedFile);
+};
 
   const handleUpload = async () => {
     if (!file) {
@@ -69,15 +66,17 @@ export default function Home() {
     try {
       setLoading(true);
       setError("");
-      
+
       setMessages([]);
       setQuestion("");
+
+      const { uploadDocument } = await import("@/lib/api");
 
       const data = await uploadDocument(file);
 
       setDocuments((prev) => [...prev, data]);
       setSelectedDocument(data);
-      setMessages([]);
+      setFile(null);
     } catch (err) {
       console.error("Upload error:", err);
       setError("Upload failed. Please try again.");
@@ -86,10 +85,27 @@ export default function Home() {
     }
   };
 
+  const handleSelectDocument = (document: Document) => {
+    setSelectedDocument(document);
+    setMessages([]);
+    setQuestion("");
+    setError("");
+  };
+
   const handleChat = async () => {
     const userQuestion = question.trim();
 
-    if (!userQuestion || chatLoading || !selectedDocument) {
+    if (!userQuestion || chatLoading) {
+      return;
+    }
+
+    if (!selectedDocument) {
+      setError("Please select a document first.");
+      return;
+    }
+
+    if (!selectedDocument.document_id) {
+      setError("Selected document is missing document ID.");
       return;
     }
 
@@ -107,7 +123,10 @@ export default function Home() {
 
       setQuestion("");
 
-      const data = await chatWithDocument(userQuestion);
+      const data = await chatWithDocument(
+        userQuestion,
+        selectedDocument.document_id
+      );
 
       setMessages((prev) => [
         ...prev,
@@ -118,7 +137,10 @@ export default function Home() {
       ]);
     } catch (err) {
       console.error("Chat error:", err);
-      setError("Failed to get an answer. Please try again.");
+
+      setError(
+        "Failed to get an answer. Please try again."
+      );
     } finally {
       setChatLoading(false);
     }
@@ -145,26 +167,19 @@ export default function Home() {
         {/* Header */}
         <DocumentHeader />
 
-        {/* Upload Section */}
+        {/* Upload */}
         <UploadDocument
           file={file}
           loading={loading}
-          onFileChange={(selectedFile) => {
-            setFile(selectedFile);
-            setError("");
-            setMessages([]);
-          }}
+          onFileChange={handleFileChange}
           onUpload={handleUpload}
         />
 
+        {/* Document List */}
         <DocumentList
           documents={documents}
           selectedDocument={selectedDocument}
-          onSelect={(document) => {
-            setSelectedDocument(document);
-            setMessages([]);
-            setError("");
-          }}
+          onSelect={handleSelectDocument}
         />
 
         {/* Document + Chat */}

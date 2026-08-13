@@ -1,7 +1,9 @@
 export type Document = {
+  document_id: string;
   filename: string;
   pages: number;
   characters: number;
   chunk_count: number;
-  preview?: string;
+  chunks: unknown[];
+  preview: string;
 };
