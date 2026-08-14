@@ -7,6 +7,7 @@ from fastapi.responses import FileResponse
 from app.services.pdf_service import save_pdf
 from app.services.embedding_service import EmbeddingService
 from app.services.qdrant_service import upsert_chunks
+from app.services.document_service import save_document, get_document
 
 router = APIRouter(
     prefix="/upload",
@@ -39,10 +40,11 @@ async def upload_pdf(file: UploadFile = File(...)):
 
     upsert_chunks(
         embedded_chunks,
-        document["document_id"],
+        document_id = document["document_id"],
     )
 
-    return document
+    document_record = save_document(document)
+    return document_record
 
 
 @router.get("/{filename}")

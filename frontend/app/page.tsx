@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { FileText } from "lucide-react";
 
-import { chatWithDocument } from "@/lib/api";
+import { chatWithDocument, getDocuments, uploadDocument, deleteDocument,} from "@/lib/api";
 import { ChatWindow } from "@/components/chat/chat-window";
 
 import type { Document } from "@/types/document";
@@ -31,6 +31,21 @@ export default function Home() {
   const [error, setError] = useState("");
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+useEffect(() => {
+  const loadDocuments = async () => {
+    try {
+      const data = await getDocuments();
+      setDocuments(data);
+    } catch (err) {
+      console.error("Failed to load documents:", err);
+    }
+  };
+
+  loadDocuments();
+}, []);
+
+
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({
@@ -91,6 +106,27 @@ export default function Home() {
     setQuestion("");
     setError("");
   };
+
+  const handleDeleteDocument = async (documentId: string) => {
+  try {
+    setError("");
+
+    await deleteDocument(documentId);
+
+    setDocuments((prev) =>
+      prev.filter((document) => document.document_id !== documentId)
+    );
+
+    if (selectedDocument?.document_id === documentId) {
+      setSelectedDocument(null);
+      setMessages([]);
+      setQuestion("");
+    }
+  } catch (err) {
+    console.error("Delete error:", err);
+    setError("Failed to delete document. Please try again.");
+  }
+};
 
   const handleChat = async () => {
     const userQuestion = question.trim();
@@ -180,6 +216,7 @@ export default function Home() {
           documents={documents}
           selectedDocument={selectedDocument}
           onSelect={handleSelectDocument}
+          onDelete={handleDeleteDocument}
         />
 
         {/* Document + Chat */}

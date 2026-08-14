@@ -1,7 +1,7 @@
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import VectorParams, Distance, PointStruct
 import uuid
-from qdrant_client.models import PointStruct, VectorParams, Distance
+from qdrant_client.models import PointStruct, VectorParams, Distance, Filter, FieldCondition, MatchValue
 
 client = QdrantClient(
     host="localhost", 
@@ -64,17 +64,31 @@ def search_chunks(
     search_result = client.query_points(
         collection_name=COLLECTION_NAME,
         query=query_embedding,
-        query_filter={
-            "must": [
-                {
-                    "key": "document_id",
-                    "match": {
-                        "value": document_id,
-                    },
-                }
+        query_filter=Filter(
+            must=[
+                FieldCondition(
+                    key="document_id",
+                    match=MatchValue(value=document_id)
+                )
             ]
-        },
+        ),
         limit=limit,
     )
 
     return search_result.points
+
+    
+def delete_document_chunks(document_id: str) -> None:
+    client.delete(
+        collection_name=COLLECTION_NAME,
+        points_selector=Filter(
+            must=[
+                FieldCondition(
+                    key="document_id",
+                    match=MatchValue(value=document_id),
+                )
+            ]
+        ),
+    )
+
+    print(f"Deleted chunks for document {document_id}.")

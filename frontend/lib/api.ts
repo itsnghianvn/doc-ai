@@ -31,4 +31,14 @@ export const chatWithDocument = async (
   return response.data;
 };
 
+export const getDocuments = async () => {
+  const response = await api.get("/documents/");
+  return response.data;
+};
+
+export const deleteDocument = async (documentId: string) => {
+  const response = await api.delete(`/documents/${documentId}`);
+  return response.data;
+};
+
 export default api;

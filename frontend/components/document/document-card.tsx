@@ -1,12 +1,18 @@
-import { FileText } from "lucide-react";
+"use client";
+
+import { FileText, Trash2, Loader2 } from "lucide-react";
 
 import type { Document } from "@/types/document";
 
 type DocumentCardProps = {
   document: Document;
+  onDelete: (documentId: string) => Promise<void>;
 };
 
-export function DocumentCard({ document }: DocumentCardProps) {
+export function DocumentCard({
+  document,
+  onDelete,
+}: DocumentCardProps) {
   return (
     <div className="mt-4 rounded-xl border bg-zinc-50 p-4">
       <div className="flex items-start gap-3">
@@ -23,6 +29,15 @@ export function DocumentCard({ document }: DocumentCardProps) {
             PDF document
           </p>
         </div>
+
+        <button
+          type="button"
+          onClick={() => onDelete(document.document_id)}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-red-200 bg-white text-red-500 transition hover:bg-red-50"
+          title="Delete document"
+        >
+          <Trash2 size={17} />
+        </button>
       </div>
 
       <div className="mt-4 grid grid-cols-3 gap-3">
