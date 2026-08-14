@@ -5,7 +5,8 @@ from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
 from app.services.pdf_service import save_pdf
-
+from app.services.embedding_service import EmbeddingService
+from app.services.qdrant_service import upsert_chunks
 
 router = APIRouter(
     prefix="/upload",
@@ -15,7 +16,7 @@ router = APIRouter(
 
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
-
+embedding_service = EmbeddingService()
 
 @router.post("/")
 async def upload_pdf(file: UploadFile = File(...)):
@@ -30,7 +31,18 @@ async def upload_pdf(file: UploadFile = File(...)):
     with file_path.open("wb") as buffer:
         shutil.copyfileobj(file.file, buffer)
 
-    return save_pdf(file_path)
+    document = save_pdf(file_path)
+
+    embedded_chunks = embedding_service.embed_chunks(
+        document["chunks"]
+    )
+
+    upsert_chunks(
+        embedded_chunks,
+        document["document_id"],
+    )
+
+    return document
 
 
 @router.get("/{filename}")

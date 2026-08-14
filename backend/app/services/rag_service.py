@@ -15,11 +15,11 @@ class RAGService:
             for chunk in chunks
         )
 
-    def ask(self, question: str) -> str:
+    def ask(self, question: str, document_id: str,) -> str:
 
         query_embedding = self.embedding_service.embed(question)
 
-        search_results = search_chunks(query_embedding)
+        search_results = search_chunks(query_embedding, document_id)
 
         context = self.build_context(search_results)
 

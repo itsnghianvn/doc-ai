@@ -9,6 +9,8 @@ rag = RAGService()
 @router.post("/chat", response_model=ChatResponse)
 
 def chat(request: ChatRequest):
-    answer = rag.ask(request.question)
+    answer = rag.ask(
+        question=request.question,
+        document_id=request.document_id,)
     return ChatResponse(answer=answer)
     
