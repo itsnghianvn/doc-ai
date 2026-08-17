@@ -19,13 +19,20 @@ export const uploadDocument = async (file: File) => {
   return response.data;
 };
 
+type ChatMessage = {
+  role: "user" | "assistant";
+  content: string;
+};
+
 export const chatWithDocument = async (
   question: string,
   documentId: string,
+  history: ChatMessage[] = [],
 ) => {
   const response = await api.post("/chat", {
     question,
     document_id: documentId,
+    history,
   });
 
   return response.data;

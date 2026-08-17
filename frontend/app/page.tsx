@@ -3,17 +3,32 @@
 import { useEffect, useRef, useState } from "react";
 import { FileText } from "lucide-react";
 
-import { chatWithDocument, getDocuments, uploadDocument, deleteDocument,} from "@/lib/api";
-import { ChatWindow } from "@/components/chat/chat-window";
+import {
+  chatWithDocument,
+  deleteDocument,
+  getDocuments,
+  uploadDocument,
+} from "@/lib/api";
 
-import type { Document } from "@/types/document";
+import { ChatWindow } from "@/components/chat/chat-window";
 import { UploadDocument } from "@/components/document/upload-document";
 import { DocumentHeader } from "@/components/layout/document-header";
 import { DocumentList } from "@/components/document/document-list";
 
+import type { Document } from "@/types/document";
+
+type Source = {
+  chunk_id: string;
+  score: number;
+  content: string;
+  start: number;
+  end: number;
+};
+
 type Message = {
   role: "user" | "assistant";
   content: string;
+  sources?: Source[];
 };
 
 export default function Home() {
@@ -32,46 +47,48 @@ export default function Home() {
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-useEffect(() => {
-  const loadDocuments = async () => {
-    try {
-      const data = await getDocuments();
-      setDocuments(data);
-    } catch (err) {
-      console.error("Failed to load documents:", err);
-    }
-  };
+  // Load documents when the page starts
+  useEffect(() => {
+    const loadDocuments = async () => {
+      try {
+        const data = await getDocuments();
+        setDocuments(data);
+      } catch (err) {
+        console.error("Failed to load documents:", err);
+      }
+    };
 
-  loadDocuments();
-}, []);
+    loadDocuments();
+  }, []);
 
-
-
+  // Auto scroll chat
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({
       behavior: "smooth",
     });
   }, [messages, chatLoading]);
 
+  // Handle file selection
   const handleFileChange = (selectedFile: File | null) => {
-  setError("");
-  setMessages([]);
-  setQuestion("");
+    setError("");
+    setMessages([]);
+    setQuestion("");
 
-  if (!selectedFile) {
-    setFile(null);
-    return;
-  }
+    if (!selectedFile) {
+      setFile(null);
+      return;
+    }
 
-  if (selectedFile.type !== "application/pdf") {
-    setFile(null);
-    setError("Please select a PDF file.");
-    return;
-  }
+    if (selectedFile.type !== "application/pdf") {
+      setFile(null);
+      setError("Please select a PDF file.");
+      return;
+    }
 
-  setFile(selectedFile);
-};
+    setFile(selectedFile);
+  };
 
+  // Upload document
   const handleUpload = async () => {
     if (!file) {
       setError("Please select a PDF file.");
@@ -84,8 +101,6 @@ useEffect(() => {
 
       setMessages([]);
       setQuestion("");
-
-      const { uploadDocument } = await import("@/lib/api");
 
       const data = await uploadDocument(file);
 
@@ -100,6 +115,7 @@ useEffect(() => {
     }
   };
 
+  // Select document
   const handleSelectDocument = (document: Document) => {
     setSelectedDocument(document);
     setMessages([]);
@@ -107,27 +123,31 @@ useEffect(() => {
     setError("");
   };
 
+  // Delete document
   const handleDeleteDocument = async (documentId: string) => {
-  try {
-    setError("");
+    try {
+      setError("");
 
-    await deleteDocument(documentId);
+      await deleteDocument(documentId);
 
-    setDocuments((prev) =>
-      prev.filter((document) => document.document_id !== documentId)
-    );
+      setDocuments((prev) =>
+        prev.filter(
+          (document) => document.document_id !== documentId
+        )
+      );
 
-    if (selectedDocument?.document_id === documentId) {
-      setSelectedDocument(null);
-      setMessages([]);
-      setQuestion("");
+      if (selectedDocument?.document_id === documentId) {
+        setSelectedDocument(null);
+        setMessages([]);
+        setQuestion("");
+      }
+    } catch (err) {
+      console.error("Delete error:", err);
+      setError("Failed to delete document. Please try again.");
     }
-  } catch (err) {
-    console.error("Delete error:", err);
-    setError("Failed to delete document. Please try again.");
-  }
-};
+  };
 
+  // Chat with selected document
   const handleChat = async () => {
     const userQuestion = question.trim();
 
@@ -149,6 +169,7 @@ useEffect(() => {
       setChatLoading(true);
       setError("");
 
+      // Add user message immediately
       setMessages((prev) => [
         ...prev,
         {
@@ -161,14 +182,17 @@ useEffect(() => {
 
       const data = await chatWithDocument(
         userQuestion,
-        selectedDocument.document_id
+        selectedDocument.document_id,
+        messages,
       );
 
+      // Add assistant response + sources
       setMessages((prev) => [
         ...prev,
         {
           role: "assistant",
           content: data.answer,
+          sources: data.sources,
         },
       ]);
     } catch (err) {
@@ -182,6 +206,7 @@ useEffect(() => {
     }
   };
 
+  // Enter = send, Shift + Enter = new line
   const handleKeyDown = (
     event: React.KeyboardEvent<HTMLTextAreaElement>
   ) => {
@@ -191,6 +216,7 @@ useEffect(() => {
     }
   };
 
+  // PDF preview URL
   const pdfUrl = selectedDocument?.filename
     ? `${process.env.NEXT_PUBLIC_API_URL}/upload/${encodeURIComponent(
         selectedDocument.filename

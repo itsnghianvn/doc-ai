@@ -1,5 +1,4 @@
 from qdrant_client import QdrantClient
-from qdrant_client.http.models import VectorParams, Distance, PointStruct
 import uuid
 from qdrant_client.models import PointStruct, VectorParams, Distance, Filter, FieldCondition, MatchValue
 
@@ -60,6 +59,7 @@ def search_chunks(
     query_embedding: list[float],
     document_id: str,
     limit: int = 5,
+    score_threshold: float = 0.65,
 ):
     search_result = client.query_points(
         collection_name=COLLECTION_NAME,
@@ -73,8 +73,8 @@ def search_chunks(
             ]
         ),
         limit=limit,
+        score_threshold=score_threshold,
     )
-
     return search_result.points
 
     
