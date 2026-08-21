@@ -55,6 +55,8 @@ class RAGService:
                 "content": chunk.payload["content"],
                 "start": chunk.payload["start"],
                 "end": chunk.payload["end"],
+                "page_start": chunk.payload.get("page_start"),
+                "page_end": chunk.payload.get("page_end"),
             }
             for chunk in search_results
         ]

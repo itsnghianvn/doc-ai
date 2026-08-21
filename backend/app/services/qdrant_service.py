@@ -28,33 +28,39 @@ def create_collection():
     else:
         print(f"Collection '{COLLECTION_NAME}' already exists.")
 
-def upsert_chunks(
-    chunks: list[dict],
-    document_id: str,
-):
-    points = []
+    def upsert_chunks(
+        chunks: list[dict],
+        document_id: str,
+    ):
+        points = []
 
-    for chunk in chunks:
-        points.append(
-            PointStruct(
-                id=str(uuid.uuid4()),
-                vector=chunk["embedding"],
-                payload={
-                    "document_id": document_id,
-                    "content": chunk["content"],
-                    "start": chunk["start"],
-                    "end": chunk["end"],
-                },
+        for chunk in chunks:
+            points.append(
+                PointStruct(
+                    id=str(uuid.uuid4()),
+                    vector=chunk["embedding"],
+                    payload={
+                        "document_id": document_id,
+                        "content": chunk["content"],
+                        "start": chunk["start"],
+                        "end": chunk["end"],
+                        "page_start": chunk.get("page_start"),
+                        "page_end": chunk.get("page_end"),
+                    },
+                )
             )
+
+        client.upsert(
+            collection_name=COLLECTION_NAME,
+            points=points,
         )
 
-    client.upsert(
-        collection_name=COLLECTION_NAME,
-        points=points,
-    )
+        print(
+            f"Upserted {len(points)} chunks "
+            f"for document {document_id}."
+        )
 
-    print(f"Upserted {len(points)} chunks for document {document_id}.")
-
+    
 def search_chunks(
     query_embedding: list[float],
     document_id: str,
