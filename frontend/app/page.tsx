@@ -39,10 +39,16 @@ export default function Home() {
   const [selectedDocument, setSelectedDocument] =
     useState<Document | null>(null);
 
+  const [selectedSource, setSelectedSource] =
+    useState<Source | null>(null);
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [chatLoading, setChatLoading] = useState(false);
 
+  const handleSourceClick = (source: Source) => {
+    setSelectedSource(source);
+  };
+  
   const [error, setError] = useState("");
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -305,6 +311,7 @@ export default function Home() {
               onQuestionChange={setQuestion}
               onChat={handleChat}
               onKeyDown={handleKeyDown}
+              onSourceClick={handleSourceClick}
             />
           </div>
         </div>

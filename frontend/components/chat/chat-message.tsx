@@ -12,12 +12,14 @@ type ChatMessageProps = {
   role: "user" | "assistant";
   content: string;
   sources?: Source[];
+  onSourceClick?: (source: Source) => void;
 };
 
 export function ChatMessage({
   role,
   content,
   sources,
+  onSourceClick,
 }: ChatMessageProps) {
   const isUser = role === "user";
 
@@ -64,6 +66,7 @@ export function ChatMessage({
                   <SourceCard
                     key={source.chunk_id}
                     source={source}
+                    onClick={() => onSourceClick?.(source)}
                   />
                 ))}
               </div>

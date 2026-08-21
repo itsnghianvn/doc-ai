@@ -29,6 +29,7 @@ type ChatWindowProps = {
   onKeyDown: (
     event: React.KeyboardEvent<HTMLTextAreaElement>
   ) => void;
+  onSourceClick: (source: Source) => void;
 };
 
 export function ChatWindow({
@@ -39,6 +40,7 @@ export function ChatWindow({
   onQuestionChange,
   onChat,
   onKeyDown,
+  onSourceClick,
 }: ChatWindowProps) {
   return (
     <section className="mt-6 flex min-h-[550px] flex-col rounded-2xl border bg-white shadow-sm">
@@ -83,6 +85,7 @@ export function ChatWindow({
               role={message.role}
               content={message.content}
               sources={message.sources}
+              onSourceClick={onSourceClick}
             />
           ))}
 

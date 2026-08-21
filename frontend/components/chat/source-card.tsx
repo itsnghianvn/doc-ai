@@ -8,11 +8,19 @@ type Source = {
 
 type SourceCardProps = {
   source: Source;
+  onClick?: () => void;
 };
 
-export function SourceCard({ source }: SourceCardProps) {
+export function SourceCard({
+  source,
+  onClick,
+}: SourceCardProps) {
   return (
-    <div className="rounded-lg border border-zinc-200 bg-white p-3">
+    <button
+      type="button"
+      onClick={onClick}
+      className="w-full rounded-lg border border-zinc-200 bg-white p-3 text-left transition hover:border-zinc-400 hover:bg-zinc-50"
+    >
       <div className="flex items-center justify-between gap-3">
         <span className="text-xs font-medium text-zinc-700">
           Document chunk
@@ -26,6 +34,6 @@ export function SourceCard({ source }: SourceCardProps) {
       <p className="mt-2 line-clamp-3 text-xs leading-5 text-zinc-500">
         {source.content}
       </p>
-    </div>
+    </button>
   );
 }
