@@ -11,6 +11,8 @@ type Source = {
   content: string;
   start: number;
   end: number;
+  page_start?: number | null;
+  page_end?: number | null;
 };
 
 type Message = {
@@ -29,7 +31,7 @@ type ChatWindowProps = {
   onKeyDown: (
     event: React.KeyboardEvent<HTMLTextAreaElement>
   ) => void;
-  onSourceClick: (source: Source) => void;
+  onSourceClick?: (source: Source) => void;
 };
 
 export function ChatWindow({

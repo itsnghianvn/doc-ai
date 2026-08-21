@@ -23,6 +23,8 @@ type Source = {
   content: string;
   start: number;
   end: number;
+  page_start?: number | null;
+  page_end?: number | null;
 };
 
 type Message = {
@@ -46,7 +48,22 @@ export default function Home() {
   const [chatLoading, setChatLoading] = useState(false);
 
   const handleSourceClick = (source: Source) => {
-    setSelectedSource(source);
+    if (!source.page_start) {
+      return;
+    }
+
+    if (!selectedDocument?.filename) {
+      return;
+    }
+
+    const pdfUrl = `${process.env.NEXT_PUBLIC_API_URL}/upload/${encodeURIComponent(
+      selectedDocument.filename
+    )}`;
+
+    window.open(
+      `${pdfUrl}#page=${source.page_start}`,
+      "_blank"
+    );
   };
   
   const [error, setError] = useState("");
