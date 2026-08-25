@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FileText } from "lucide-react";
+import { FileText, Loader2 } from "lucide-react";
 
 import {
   chatWithDocument,
@@ -11,9 +11,7 @@ import {
 } from "@/lib/api";
 
 import { ChatWindow } from "@/components/chat/chat-window";
-import { UploadDocument } from "@/components/document/upload-document";
-import { DocumentHeader } from "@/components/layout/document-header";
-import { DocumentList } from "@/components/document/document-list";
+import { Sidebar } from "@/components/layout/sidebar";
 
 import type { Document } from "@/types/document";
 
@@ -45,56 +43,67 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [chatLoading, setChatLoading] = useState(false);
 
-  const [pdfPage, setPdfPage] = useState<number | null>(null);
-
   const [error, setError] = useState("");
 
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  // Load documents when the page starts
+  /*
+   * Load documents
+   */
   useEffect(() => {
     const loadDocuments = async () => {
       try {
         const data = await getDocuments();
+
         setDocuments(data);
+
+        if (data.length > 0) {
+          setSelectedDocument(data[0]);
+        }
       } catch (err) {
         console.error("Failed to load documents:", err);
+        setError("Failed to load documents.");
       }
     };
 
     loadDocuments();
   }, []);
 
-  // Auto scroll chat
+  /*
+   * Auto scroll chat
+   */
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({
       behavior: "smooth",
     });
   }, [messages, chatLoading]);
 
-  // Handle source click
-  const handleSourceClick = (source: Source) => {
-    if (!source.page_start) {
-      return;
-    }
-
-    setPdfPage(source.page_start);
+  /*
+   * Open file picker
+   */
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
   };
 
-  // Handle file selection
-  const handleFileChange = (selectedFile: File | null) => {
+  /*
+   * Select PDF
+   */
+  const handleFileChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const selectedFile =
+      event.target.files?.[0] ?? null;
+
+    event.target.value = "";
+
     setError("");
-    setMessages([]);
-    setQuestion("");
-    setPdfPage(null);
 
     if (!selectedFile) {
-      setFile(null);
       return;
     }
 
     if (selectedFile.type !== "application/pdf") {
-      setFile(null);
       setError("Please select a PDF file.");
       return;
     }
@@ -102,10 +111,11 @@ export default function Home() {
     setFile(selectedFile);
   };
 
-  // Upload document
+  /*
+   * Upload document
+   */
   const handleUpload = async () => {
-    if (!file) {
-      setError("Please select a PDF file.");
+    if (!file || loading) {
       return;
     }
 
@@ -113,14 +123,18 @@ export default function Home() {
       setLoading(true);
       setError("");
 
-      setMessages([]);
-      setQuestion("");
-      setPdfPage(null);
-
       const data = await uploadDocument(file);
 
-      setDocuments((prev) => [...prev, data]);
+      setDocuments((prev) => [
+        ...prev,
+        data,
+      ]);
+
       setSelectedDocument(data);
+
+      setMessages([]);
+      setQuestion("");
+
       setFile(null);
     } catch (err) {
       console.error("Upload error:", err);
@@ -130,41 +144,61 @@ export default function Home() {
     }
   };
 
-  // Select document
-  const handleSelectDocument = (document: Document) => {
+  /*
+   * Select document
+   */
+  const handleSelectDocument = (
+    document: Document
+  ) => {
     setSelectedDocument(document);
+
     setMessages([]);
     setQuestion("");
     setError("");
-    setPdfPage(null);
   };
 
-  // Delete document
-  const handleDeleteDocument = async (documentId: string) => {
+  /*
+   * Delete document
+   */
+  const handleDeleteDocument = async (
+    documentId: string
+  ) => {
     try {
       setError("");
 
       await deleteDocument(documentId);
 
-      setDocuments((prev) =>
-        prev.filter(
-          (document) => document.document_id !== documentId
-        )
-      );
+      const remainingDocuments =
+        documents.filter(
+          (document) =>
+            document.document_id !== documentId
+        );
 
-      if (selectedDocument?.document_id === documentId) {
-        setSelectedDocument(null);
+      setDocuments(remainingDocuments);
+
+      if (
+        selectedDocument?.document_id ===
+        documentId
+      ) {
+        const nextDocument =
+          remainingDocuments[0] ?? null;
+
+        setSelectedDocument(nextDocument);
+
         setMessages([]);
         setQuestion("");
-        setPdfPage(null);
       }
     } catch (err) {
       console.error("Delete error:", err);
-      setError("Failed to delete document. Please try again.");
+      setError(
+        "Failed to delete document. Please try again."
+      );
     }
   };
 
-  // Chat with selected document
+  /*
+   * Chat
+   */
   const handleChat = async () => {
     const userQuestion = question.trim();
 
@@ -178,7 +212,9 @@ export default function Home() {
     }
 
     if (!selectedDocument.document_id) {
-      setError("Selected document is missing document ID.");
+      setError(
+        "Selected document is missing document ID."
+      );
       return;
     }
 
@@ -186,7 +222,6 @@ export default function Home() {
       setChatLoading(true);
       setError("");
 
-      // Add user message immediately
       setMessages((prev) => [
         ...prev,
         {
@@ -200,10 +235,9 @@ export default function Home() {
       const data = await chatWithDocument(
         userQuestion,
         selectedDocument.document_id,
-        messages,
+        messages
       );
 
-      // Add assistant response + sources
       setMessages((prev) => [
         ...prev,
         {
@@ -215,132 +249,227 @@ export default function Home() {
     } catch (err) {
       console.error("Chat error:", err);
 
-      setError("Failed to get an answer. Please try again.");
+      setError(
+        "Failed to get an answer. Please try again."
+      );
     } finally {
       setChatLoading(false);
     }
   };
 
-  // Enter = send, Shift + Enter = new line
+  /*
+   * Enter = send
+   * Shift + Enter = newline
+   */
   const handleKeyDown = (
     event: React.KeyboardEvent<HTMLTextAreaElement>
   ) => {
-    if (event.key === "Enter" && !event.shiftKey) {
+    if (
+      event.key === "Enter" &&
+      !event.shiftKey
+    ) {
       event.preventDefault();
+
       handleChat();
     }
   };
 
-  // PDF preview URL
+  /*
+   * PDF URL
+   */
   const pdfUrl = selectedDocument?.filename
     ? `${process.env.NEXT_PUBLIC_API_URL}/upload/${encodeURIComponent(
         selectedDocument.filename
-      )}${pdfPage ? `#page=${pdfPage}` : ""}`
+      )}`
     : null;
 
   return (
-    <main className="min-h-screen bg-zinc-50">
-      <div className="mx-auto w-full max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
-        {/* Header */}
-        <DocumentHeader />
+    <div className="flex h-screen overflow-hidden bg-zinc-50">
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".pdf,application/pdf"
+        onChange={handleFileChange}
+        className="hidden"
+      />
 
-        {/* Upload */}
-        <UploadDocument
-          file={file}
-          loading={loading}
-          onFileChange={handleFileChange}
-          onUpload={handleUpload}
-        />
+      {/* Sidebar */}
+      <Sidebar
+        documents={documents}
+        selectedDocument={selectedDocument}
+        onSelectDocument={handleSelectDocument}
+        onDeleteDocument={handleDeleteDocument}
+        onUploadClick={handleUploadClick}
+      />
 
-        {/* Document List */}
-        <DocumentList
-          documents={documents}
-          selectedDocument={selectedDocument}
-          onSelect={handleSelectDocument}
-          onDelete={handleDeleteDocument}
-        />
-
-        {/* Document + Chat */}
-        <div className="mt-8 grid gap-6 lg:grid-cols-2">
-          {/* PDF Viewer */}
-          <section className="overflow-hidden rounded-2xl border bg-white shadow-sm">
-            <div className="border-b px-5 py-4">
-              <div className="flex items-center gap-2">
-                <FileText size={18} />
-
-                <h2 className="font-semibold text-zinc-900">
-                  Document
+      {/* Main workspace */}
+      <main className="min-w-0 flex-1 overflow-hidden">
+        {/* Top bar */}
+        <header className="flex h-16 items-center justify-between border-b bg-white px-6">
+          <div className="min-w-0">
+            {selectedDocument ? (
+              <>
+                <h2 className="truncate text-sm font-semibold text-zinc-900">
+                  {selectedDocument.filename}
                 </h2>
+
+                <p className="mt-0.5 text-xs text-zinc-500">
+                  {selectedDocument.pages}{" "}
+                  {selectedDocument.pages === 1
+                    ? "page"
+                    : "pages"}{" "}
+                  ·{" "}
+                  {selectedDocument.chunk_count}{" "}
+                  chunks
+                </p>
+              </>
+            ) : (
+              <>
+                <h2 className="text-sm font-semibold text-zinc-900">
+                  Document workspace
+                </h2>
+
+                <p className="mt-0.5 text-xs text-zinc-500">
+                  Upload a PDF to get started
+                </p>
+              </>
+            )}
+          </div>
+
+          {/* Upload status */}
+          {loading && (
+            <div className="flex items-center gap-2 rounded-lg bg-zinc-100 px-3 py-2 text-xs text-zinc-600">
+              <Loader2
+                size={14}
+                className="animate-spin"
+              />
+
+              Processing document...
+            </div>
+          )}
+        </header>
+
+        {/* Workspace */}
+        <div className="h-[calc(100vh-4rem)] p-5">
+          <div className="grid h-full gap-5 lg:grid-cols-2">
+            {/* PDF Viewer */}
+            <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border bg-white shadow-sm">
+              <div className="flex h-14 shrink-0 items-center gap-2 border-b px-5">
+                <FileText
+                  size={17}
+                  className="text-zinc-500"
+                />
+
+                <div className="min-w-0">
+                  <h3 className="text-sm font-semibold text-zinc-900">
+                    Document
+                  </h3>
+                </div>
               </div>
 
-              {selectedDocument?.filename && (
-                <p className="mt-1 truncate text-xs text-zinc-500">
-                  {selectedDocument.filename}
-                </p>
-              )}
+              <div className="min-h-0 flex-1 bg-zinc-100">
+                {pdfUrl ? (
+                  <iframe
+                    src={pdfUrl}
+                    title="PDF document"
+                    className="h-full w-full border-0"
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center px-6 text-center">
+                    <div>
+                      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-sm">
+                        <FileText
+                          size={24}
+                          className="text-zinc-300"
+                        />
+                      </div>
 
-              {pdfPage && (
-                <p className="mt-1 text-xs text-blue-600">
-                  Viewing page {pdfPage}
-                </p>
-              )}
-            </div>
+                      <h3 className="mt-4 text-sm font-semibold text-zinc-700">
+                        No document selected
+                      </h3>
 
-            <div className="h-[650px] bg-zinc-100">
-              {pdfUrl ? (
-                <iframe
-                  key={pdfUrl}
-                  src={pdfUrl}
-                  title="PDF document"
-                  className="h-full w-full border-0"
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center px-6 text-center">
-                  <div>
-                    <FileText
-                      size={40}
-                      className="mx-auto text-zinc-300"
-                    />
-
-                    <p className="mt-3 text-sm text-zinc-500">
-                      Upload a PDF to preview it here.
-                    </p>
+                      <p className="mt-1 max-w-xs text-xs leading-5 text-zinc-400">
+                        Upload a PDF from the sidebar
+                        to start exploring your
+                        document.
+                      </p>
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          </section>
+                )}
+              </div>
+            </section>
 
-          {/* Chat */}
-          <div
-            className={
-              !selectedDocument
-                ? "pointer-events-none opacity-50"
-                : ""
-            }
-          >
-            <ChatWindow
-              messages={messages}
-              question={question}
-              chatLoading={chatLoading}
-              messagesEndRef={messagesEndRef}
-              onQuestionChange={setQuestion}
-              onChat={handleChat}
-              onKeyDown={handleKeyDown}
-              onSourceClick={handleSourceClick}
-            />
+            {/* Chat */}
+            <div
+              className={`min-h-0 ${
+                !selectedDocument
+                  ? "pointer-events-none opacity-50"
+                  : ""
+              }`}
+            >
+              <ChatWindow
+                messages={messages}
+                question={question}
+                chatLoading={chatLoading}
+                messagesEndRef={messagesEndRef}
+                onQuestionChange={setQuestion}
+                onChat={handleChat}
+                onKeyDown={handleKeyDown}
+              />
+            </div>
           </div>
         </div>
 
+        {/* Selected file upload confirmation */}
+        {file && !loading && (
+          <div className="fixed bottom-5 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-2xl border bg-white p-4 shadow-xl">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zinc-100">
+                <FileText
+                  size={17}
+                  className="text-zinc-600"
+                />
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-medium text-zinc-900">
+                  {file.name}
+                </p>
+
+                <p className="mt-0.5 text-xs text-zinc-500">
+                  Ready to upload
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleUpload}
+                className="rounded-lg bg-black px-3 py-2 text-xs font-medium text-white transition hover:bg-zinc-800"
+              >
+                Upload
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setFile(null)}
+              className="mt-2 text-xs text-zinc-400 transition hover:text-zinc-700"
+            >
+              Cancel
+            </button>
+          </div>
+        )}
+
         {/* Error */}
         {error && (
-          <div className="mt-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3">
+          <div className="fixed bottom-5 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 shadow-lg">
             <p className="text-sm text-red-600">
               {error}
             </p>
           </div>
         )}
-      </div>
-    </main>
+      </main>
+    </div>
   );
 }
