@@ -41,31 +41,12 @@ export default function Home() {
   const [selectedDocument, setSelectedDocument] =
     useState<Document | null>(null);
 
-  const [selectedSource, setSelectedSource] =
-    useState<Source | null>(null);
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [chatLoading, setChatLoading] = useState(false);
 
-  const handleSourceClick = (source: Source) => {
-    if (!source.page_start) {
-      return;
-    }
+  const [pdfPage, setPdfPage] = useState<number | null>(null);
 
-    if (!selectedDocument?.filename) {
-      return;
-    }
-
-    const pdfUrl = `${process.env.NEXT_PUBLIC_API_URL}/upload/${encodeURIComponent(
-      selectedDocument.filename
-    )}`;
-
-    window.open(
-      `${pdfUrl}#page=${source.page_start}`,
-      "_blank"
-    );
-  };
-  
   const [error, setError] = useState("");
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -91,11 +72,21 @@ export default function Home() {
     });
   }, [messages, chatLoading]);
 
+  // Handle source click
+  const handleSourceClick = (source: Source) => {
+    if (!source.page_start) {
+      return;
+    }
+
+    setPdfPage(source.page_start);
+  };
+
   // Handle file selection
   const handleFileChange = (selectedFile: File | null) => {
     setError("");
     setMessages([]);
     setQuestion("");
+    setPdfPage(null);
 
     if (!selectedFile) {
       setFile(null);
@@ -124,6 +115,7 @@ export default function Home() {
 
       setMessages([]);
       setQuestion("");
+      setPdfPage(null);
 
       const data = await uploadDocument(file);
 
@@ -144,6 +136,7 @@ export default function Home() {
     setMessages([]);
     setQuestion("");
     setError("");
+    setPdfPage(null);
   };
 
   // Delete document
@@ -163,6 +156,7 @@ export default function Home() {
         setSelectedDocument(null);
         setMessages([]);
         setQuestion("");
+        setPdfPage(null);
       }
     } catch (err) {
       console.error("Delete error:", err);
@@ -221,9 +215,7 @@ export default function Home() {
     } catch (err) {
       console.error("Chat error:", err);
 
-      setError(
-        "Failed to get an answer. Please try again."
-      );
+      setError("Failed to get an answer. Please try again.");
     } finally {
       setChatLoading(false);
     }
@@ -243,7 +235,7 @@ export default function Home() {
   const pdfUrl = selectedDocument?.filename
     ? `${process.env.NEXT_PUBLIC_API_URL}/upload/${encodeURIComponent(
         selectedDocument.filename
-      )}`
+      )}${pdfPage ? `#page=${pdfPage}` : ""}`
     : null;
 
   return (
@@ -286,11 +278,18 @@ export default function Home() {
                   {selectedDocument.filename}
                 </p>
               )}
+
+              {pdfPage && (
+                <p className="mt-1 text-xs text-blue-600">
+                  Viewing page {pdfPage}
+                </p>
+              )}
             </div>
 
             <div className="h-[650px] bg-zinc-100">
               {pdfUrl ? (
                 <iframe
+                  key={pdfUrl}
                   src={pdfUrl}
                   title="PDF document"
                   className="h-full w-full border-0"
