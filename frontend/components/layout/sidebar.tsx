@@ -21,7 +21,7 @@ export function Sidebar({
   onUploadClick,
 }: SidebarProps) {
   return (
-    <aside className="flex h-screen w-[280px] shrink-0 flex-col border-r bg-white">
+    <aside className="hidden h-screen w-[280px] shrink-0 flex-col border-r bg-white md:flex">
       {/* Logo */}
       <div className="flex h-16 items-center border-b px-5">
         <div className="flex items-center gap-2.5">

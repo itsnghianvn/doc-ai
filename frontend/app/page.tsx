@@ -1,7 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FileText, Loader2, X } from "lucide-react";
+import {
+  FileText,
+  Loader2,
+  MessageSquareText,
+  Upload,
+  X,
+} from "lucide-react";
 
 import {
   chatWithDocument,
@@ -11,10 +17,13 @@ import {
 } from "@/lib/api";
 
 import { ChatWindow } from "@/components/chat/chat-window";
+import { PdfViewer } from "@/components/document/pdf-viewer";
 import { Sidebar } from "@/components/layout/sidebar";
 
 import type { Message, Source } from "@/types/chat";
 import type { Document } from "@/types/document";
+
+type MobilePane = "document" | "chat";
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
@@ -29,6 +38,8 @@ export default function Home() {
   const [chatLoading, setChatLoading] = useState(false);
 
   const [pdfPage, setPdfPage] = useState<number | null>(null);
+  const [mobilePane, setMobilePane] =
+    useState<MobilePane>("document");
 
   const [error, setError] = useState("");
 
@@ -119,6 +130,7 @@ export default function Home() {
 
       setSelectedDocument(data);
       setPdfPage(null);
+      setMobilePane("document");
 
       setMessages([]);
       setQuestion("");
@@ -140,6 +152,7 @@ export default function Home() {
   ) => {
     setSelectedDocument(document);
     setPdfPage(null);
+    setMobilePane("document");
 
     setMessages([]);
     setQuestion("");
@@ -289,19 +302,11 @@ export default function Home() {
     }
 
     setPdfPage(source.page_start);
+    setMobilePane("document");
   };
 
-  /*
-   * PDF URL
-   */
-  const pdfUrl = selectedDocument?.filename
-    ? `${process.env.NEXT_PUBLIC_API_URL}/upload/${encodeURIComponent(
-        selectedDocument.filename
-      )}${pdfPage ? `#page=${pdfPage}` : ""}`
-    : null;
-
   return (
-    <div className="flex h-screen overflow-hidden bg-zinc-50">
+    <div className="flex h-dvh overflow-hidden bg-zinc-50">
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
@@ -323,8 +328,8 @@ export default function Home() {
       {/* Main workspace */}
       <main className="min-w-0 flex-1 overflow-hidden">
         {/* Top bar */}
-        <header className="flex h-16 items-center justify-between border-b bg-white px-6">
-          <div className="min-w-0">
+        <header className="flex h-16 items-center justify-between gap-3 border-b bg-white px-3 sm:px-4 md:px-6">
+          <div className="hidden min-w-0 md:block">
             {selectedDocument ? (
               <>
                 <h2 className="truncate text-sm font-semibold text-zinc-900">
@@ -354,81 +359,114 @@ export default function Home() {
             )}
           </div>
 
-          {/* Upload status */}
-          {loading && (
-            <div className="flex items-center gap-2 rounded-lg bg-zinc-100 px-3 py-2 text-xs text-zinc-600">
-              <Loader2
-                size={14}
-                className="animate-spin"
-              />
+          <select
+            value={selectedDocument?.document_id ?? ""}
+            onChange={(event) => {
+              const document = documents.find(
+                (item) =>
+                  item.document_id === event.target.value
+              );
 
-              Processing document...
-            </div>
-          )}
+              if (document) {
+                handleSelectDocument(document);
+              }
+            }}
+            className="min-w-0 flex-1 truncate rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 outline-none md:hidden"
+            aria-label="Select document"
+          >
+            {documents.length === 0 && (
+              <option value="">No documents</option>
+            )}
+            {documents.map((document) => (
+              <option
+                key={document.document_id}
+                value={document.document_id}
+              >
+                {document.filename}
+              </option>
+            ))}
+          </select>
+
+          <div className="flex shrink-0 items-center gap-2">
+            {loading && (
+              <div className="flex items-center gap-2 rounded-lg bg-zinc-100 px-2.5 py-2 text-xs text-zinc-600">
+                <Loader2
+                  size={14}
+                  className="animate-spin"
+                />
+                <span className="hidden sm:inline">
+                  Processing document...
+                </span>
+              </div>
+            )}
+
+            <button
+              type="button"
+              onClick={handleUploadClick}
+              disabled={loading}
+              className="flex h-9 w-9 items-center justify-center rounded-lg bg-black text-white disabled:opacity-50 md:hidden"
+              aria-label="Upload PDF"
+            >
+              <Upload size={16} />
+            </button>
+          </div>
         </header>
 
         {/* Workspace */}
-        <div className="h-[calc(100vh-4rem)] p-5">
-          <div className="grid h-full gap-5 lg:grid-cols-2">
+        <div className="flex h-[calc(100dvh-4rem)] min-h-0 flex-col p-3 md:p-5">
+          <div className="mb-3 grid grid-cols-2 rounded-lg bg-zinc-200/70 p-1 md:hidden">
+            <button
+              type="button"
+              onClick={() => setMobilePane("document")}
+              className={`flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition ${
+                mobilePane === "document"
+                  ? "bg-white text-zinc-900"
+                  : "text-zinc-500"
+              }`}
+            >
+              <FileText size={14} />
+              Document
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setMobilePane("chat")}
+              className={`flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition ${
+                mobilePane === "chat"
+                  ? "bg-white text-zinc-900"
+                  : "text-zinc-500"
+              }`}
+            >
+              <MessageSquareText size={14} />
+              Chat
+            </button>
+          </div>
+
+          <div className="grid min-h-0 flex-1 gap-5 md:grid-cols-2">
             {/* PDF Viewer */}
-            <section className="flex min-h-0 flex-col overflow-hidden rounded-2xl border bg-white shadow-sm">
-              <div className="flex h-14 shrink-0 items-center gap-2 border-b px-5">
-                <FileText
-                  size={17}
-                  className="text-zinc-500"
+            <div
+              className={`min-h-0 ${
+                mobilePane === "document"
+                  ? "flex"
+                  : "hidden"
+              } md:flex`}
+            >
+              <div className="min-h-0 min-w-0 flex-1">
+                <PdfViewer
+                  document={selectedDocument}
+                  page={pdfPage}
+                  onPageChange={setPdfPage}
                 />
-
-                <div className="min-w-0">
-                  <h3 className="truncate text-sm font-semibold text-zinc-900">
-                    {selectedDocument
-                      ? selectedDocument.filename
-                      : "Document"}
-                  </h3>
-
-                  {pdfPage && (
-                    <p className="text-xs text-zinc-400">
-                      Page {pdfPage}
-                    </p>
-                  )}
-                </div>
               </div>
-
-              <div className="min-h-0 flex-1 bg-zinc-100">
-                {pdfUrl ? (
-                  <iframe
-                    key={pdfUrl}
-                    src={pdfUrl}
-                    title="PDF document"
-                    className="h-full w-full border-0"
-                  />
-                ) : (
-                  <div className="flex h-full items-center justify-center px-6 text-center">
-                    <div>
-                      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-sm">
-                        <FileText
-                          size={24}
-                          className="text-zinc-300"
-                        />
-                      </div>
-
-                      <h3 className="mt-4 text-sm font-semibold text-zinc-700">
-                        No document selected
-                      </h3>
-
-                      <p className="mt-1 max-w-xs text-xs leading-5 text-zinc-400">
-                        Upload a PDF from the sidebar
-                        to start exploring your
-                        document.
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </section>
+            </div>
 
             {/* Chat */}
             <div
               className={`min-h-0 ${
+                mobilePane === "chat"
+                  ? "block"
+                  : "hidden"
+              } md:block ${
                 !selectedDocument
                   ? "pointer-events-none opacity-50"
                   : ""
