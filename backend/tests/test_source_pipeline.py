@@ -10,9 +10,11 @@ import fitz
 os.environ.setdefault("GEMINI_API_KEY", "test-key")
 
 from app.schemas.chat import Source
+from app.core.config import settings
 from app.services import qdrant_service
 from app.services.pdf_service import save_pdf
 from app.services.rag_service import RAGService
+from app.services.reranking_service import RankedChunk
 
 
 class SourcePipelineTests(unittest.TestCase):
@@ -115,6 +117,16 @@ class SourcePipelineTests(unittest.TestCase):
         service.embedding_service = SimpleNamespace(
             embed=lambda _: [0.1, 0.2]
         )
+        service.reranking_service = SimpleNamespace(
+            rerank=lambda *_: [
+                RankedChunk(
+                    chunk=result_chunk,
+                    score=0.88,
+                    retrieval_score=0.91,
+                    rerank_score=0.86,
+                )
+            ],
+        )
         service.llm_service = SimpleNamespace(
             generate_answer=lambda **_: "Grounded answer."
         )
@@ -122,12 +134,18 @@ class SourcePipelineTests(unittest.TestCase):
         with patch(
             "app.services.rag_service.search_chunks",
             return_value=[result_chunk],
-        ):
+        ) as search:
             response = service.ask(
                 question="What is on page two?",
                 document_id="document-123",
             )
 
+        search.assert_called_once_with(
+            [0.1, 0.2],
+            "document-123",
+            limit=settings.RAG_RETRIEVAL_TOP_N,
+            score_threshold=settings.RAG_RETRIEVAL_SCORE_THRESHOLD,
+        )
         self.assertEqual(response["answer"], "Grounded answer.")
         self.assertEqual(
             response["sources"],
@@ -136,7 +154,9 @@ class SourcePipelineTests(unittest.TestCase):
                     "chunk_id": "point-1",
                     "document_id": "document-123",
                     "chunk_index": 3,
-                    "score": 0.91,
+                    "score": 0.88,
+                    "retrieval_score": 0.91,
+                    "rerank_score": 0.86,
                     "content": "A cited passage.",
                     "start": 20,
                     "end": 36,
@@ -151,6 +171,7 @@ class SourcePipelineTests(unittest.TestCase):
             chunk_id="point-1",
             document_id="document-123",
             score=0.8,
+            retrieval_score=0.82,
             content="A source without a known page.",
             start=0,
             end=30,

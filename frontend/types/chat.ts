@@ -3,6 +3,8 @@ export type Source = {
   document_id: string;
   chunk_index?: number | null;
   score: number;
+  retrieval_score: number;
+  rerank_score?: number | null;
   content: string;
   start: number;
   end: number;

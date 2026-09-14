@@ -11,7 +11,7 @@ class EmbeddingService:
 
     def embed(self, text: str) -> list[float]:
         response = self.client.models.embed_content(
-            model="gemini-embedding-001",
+            model=settings.GEMINI_EMBEDDING_MODEL,
             contents=text,
         )
 

@@ -50,7 +50,7 @@ class QueryRewriteService:
             """
 
         response = self.client.models.generate_content(
-            model="gemini-3.5-flash",
+            model=settings.GEMINI_GENERATION_MODEL,
             contents=prompt,
         )
 

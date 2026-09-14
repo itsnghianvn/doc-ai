@@ -17,6 +17,8 @@ class Source(BaseModel):
     document_id: str
     chunk_index: int | None = None
     score: float
+    retrieval_score: float
+    rerank_score: float | None = None
     content: str
     start: int
     end: int
