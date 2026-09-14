@@ -143,4 +143,5 @@ async def get_pdf(filename: str):
         path=file_path,
         media_type="application/pdf",
         filename=file_path.name,
+        content_disposition_type="inline",
     )

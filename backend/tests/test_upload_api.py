@@ -1,4 +1,5 @@
 import os
+import tempfile
 import unittest
 from datetime import datetime, timezone
 from pathlib import Path
@@ -131,6 +132,28 @@ class UploadApiTests(unittest.TestCase):
             "processing",
         )
         process_document.assert_called_once()
+
+    def test_serves_pdf_inline_for_embedded_viewer(self):
+        with tempfile.TemporaryDirectory() as directory:
+            upload_dir = Path(directory)
+            (upload_dir / "viewer.pdf").write_bytes(
+                b"%PDF-1.7"
+            )
+
+            with patch(
+                "app.api.routes.upload.UPLOAD_DIR",
+                upload_dir,
+            ):
+                response = self.client.get(
+                    "/upload/viewer.pdf"
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(
+            response.headers["content-disposition"].startswith(
+                "inline;"
+            )
+        )
 
 
 if __name__ == "__main__":
