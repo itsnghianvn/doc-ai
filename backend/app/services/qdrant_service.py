@@ -10,14 +10,16 @@ from qdrant_client.models import (
     MatchValue,
 )
 
+from app.core.config import settings
+
 
 client = QdrantClient(
-    host="localhost",
-    port=6333,
+    host=settings.QDRANT_HOST,
+    port=settings.QDRANT_PORT,
 )
 
 
-COLLECTION_NAME = "documents"
+COLLECTION_NAME = settings.QDRANT_COLLECTION_NAME
 
 
 def create_collection():
@@ -29,7 +31,7 @@ def create_collection():
         client.create_collection(
             collection_name=COLLECTION_NAME,
             vectors_config=VectorParams(
-                size=3072,
+                size=settings.EMBEDDING_DIMENSION,
                 distance=Distance.COSINE,
             ),
         )

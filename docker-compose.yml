@@ -1,11 +1,52 @@
 services:
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+    container_name: docai-frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ./backend
+    container_name: docai-backend
+    environment:
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_GENERATION_MODEL: ${GEMINI_GENERATION_MODEL:-gemini-3.5-flash}
+      GEMINI_EMBEDDING_MODEL: ${GEMINI_EMBEDDING_MODEL:-gemini-embedding-001}
+      DATABASE_URL: postgresql+psycopg://docai:${POSTGRES_PASSWORD:-docai}@postgres:5432/docai
+      QDRANT_HOST: qdrant
+      QDRANT_PORT: 6333
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      RAG_RETRIEVAL_TOP_N: ${RAG_RETRIEVAL_TOP_N:-10}
+      RAG_RETRIEVAL_SCORE_THRESHOLD: ${RAG_RETRIEVAL_SCORE_THRESHOLD:-0.45}
+      RAG_RERANK_TOP_K: ${RAG_RERANK_TOP_K:-5}
+      RAG_RERANK_MIN_SCORE: ${RAG_RERANK_MIN_SCORE:-0.35}
+      RAG_RERANK_VECTOR_WEIGHT: ${RAG_RERANK_VECTOR_WEIGHT:-0.35}
+    ports:
+      - "8000:8000"
+    volumes:
+      - uploaded_pdfs:/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+      qdrant:
+        condition: service_started
+    restart: unless-stopped
+
   postgres:
     image: postgres:17-alpine
     container_name: docai-postgres
     environment:
       POSTGRES_DB: docai
       POSTGRES_USER: docai
-      POSTGRES_PASSWORD: docai
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-docai}
     ports:
       - "5432:5432"
     volumes:
@@ -15,17 +56,18 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    restart: unless-stopped
 
   qdrant:
-    image: qdrant/qdrant:latest
+    image: qdrant/qdrant:v1.15.4
     container_name: docai-qdrant
-
     ports:
       - "6333:6333"
-
     volumes:
       - qdrant_data:/qdrant/storage
-    
+    restart: unless-stopped
+
 volumes:
   postgres_data:
   qdrant_data:
+  uploaded_pdfs:

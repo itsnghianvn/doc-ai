@@ -22,6 +22,7 @@ frontend/out/
 .env
 .env.local
 .env.*
+!.env.example
 
 # =========================
 # macOS
