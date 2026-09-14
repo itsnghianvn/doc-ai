@@ -4,22 +4,7 @@ import { FileText, Loader2 } from "lucide-react";
 
 import { ChatInput } from "@/components/chat/chat-input";
 import { ChatMessage } from "@/components/chat/chat-message";
-
-type Source = {
-  chunk_id: string;
-  score: number;
-  content: string;
-  start: number;
-  end: number;
-  page_start?: number | null;
-  page_end?: number | null;
-};
-
-type Message = {
-  role: "user" | "assistant";
-  content: string;
-  sources?: Source[];
-};
+import type { Message, Source } from "@/types/chat";
 
 type ChatWindowProps = {
   messages: Message[];

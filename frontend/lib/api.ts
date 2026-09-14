@@ -1,5 +1,7 @@
 import axios from "axios";
 
+import type { ChatResponse, Message } from "@/types/chat";
+
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
 });
@@ -19,17 +21,12 @@ export const uploadDocument = async (file: File) => {
   return response.data;
 };
 
-type ChatMessage = {
-  role: "user" | "assistant";
-  content: string;
-};
-
 export const chatWithDocument = async (
   question: string,
   documentId: string,
-  history: ChatMessage[] = [],
-) => {
-  const response = await api.post("/chat", {
+  history: Message[] = [],
+): Promise<ChatResponse> => {
+  const response = await api.post<ChatResponse>("/chat", {
     question,
     document_id: documentId,
     history,

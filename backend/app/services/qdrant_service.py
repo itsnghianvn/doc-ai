@@ -53,6 +53,7 @@ def upsert_chunks(
                 vector=chunk["embedding"],
                 payload={
                     "document_id": document_id,
+                    "chunk_index": chunk.get("chunk_index", chunk.get("id")),
                     "content": chunk["content"],
                     "start": chunk["start"],
                     "end": chunk["end"],

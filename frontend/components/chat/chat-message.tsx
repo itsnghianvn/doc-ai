@@ -1,16 +1,7 @@
 import ReactMarkdown from "react-markdown";
 
 import { SourceCard } from "@/components/chat/source-card";
-
-type Source = {
-  chunk_id: string;
-  score: number;
-  content: string;
-  start: number;
-  end: number;
-  page_start?: number | null;
-  page_end?: number | null;
-};
+import type { Source } from "@/types/chat";
 
 type ChatMessageProps = {
   role: "user" | "assistant";

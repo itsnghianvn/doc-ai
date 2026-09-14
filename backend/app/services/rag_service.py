@@ -51,6 +51,8 @@ class RAGService:
         sources = [
             {
                 "chunk_id": str(chunk.id),
+                "document_id": chunk.payload["document_id"],
+                "chunk_index": chunk.payload.get("chunk_index"),
                 "score": chunk.score,
                 "content": chunk.payload["content"],
                 "start": chunk.payload["start"],

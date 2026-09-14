@@ -13,23 +13,8 @@ import {
 import { ChatWindow } from "@/components/chat/chat-window";
 import { Sidebar } from "@/components/layout/sidebar";
 
+import type { Message, Source } from "@/types/chat";
 import type { Document } from "@/types/document";
-
-type Source = {
-  chunk_id: string;
-  score: number;
-  content: string;
-  start: number;
-  end: number;
-  page_start?: number | null;
-  page_end?: number | null;
-};
-
-type Message = {
-  role: "user" | "assistant";
-  content: string;
-  sources?: Source[];
-};
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
@@ -42,6 +27,8 @@ export default function Home() {
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [chatLoading, setChatLoading] = useState(false);
+
+  const [pdfPage, setPdfPage] = useState<number | null>(null);
 
   const [error, setError] = useState("");
 
@@ -131,6 +118,7 @@ export default function Home() {
       ]);
 
       setSelectedDocument(data);
+      setPdfPage(null);
 
       setMessages([]);
       setQuestion("");
@@ -151,6 +139,7 @@ export default function Home() {
     document: Document
   ) => {
     setSelectedDocument(document);
+    setPdfPage(null);
 
     setMessages([]);
     setQuestion("");
@@ -184,12 +173,14 @@ export default function Home() {
           remainingDocuments[0] ?? null;
 
         setSelectedDocument(nextDocument);
+        setPdfPage(null);
 
         setMessages([]);
         setQuestion("");
       }
     } catch (err) {
       console.error("Delete error:", err);
+
       setError(
         "Failed to delete document. Please try again."
       );
@@ -275,12 +266,26 @@ export default function Home() {
   };
 
   /*
+   * Open source in PDF
+   */
+  const handleSourceClick = (source: Source) => {
+    if (
+      !source.page_start ||
+      source.document_id !== selectedDocument?.document_id
+    ) {
+      return;
+    }
+
+    setPdfPage(source.page_start);
+  };
+
+  /*
    * PDF URL
    */
   const pdfUrl = selectedDocument?.filename
     ? `${process.env.NEXT_PUBLIC_API_URL}/upload/${encodeURIComponent(
         selectedDocument.filename
-      )}`
+      )}${pdfPage ? `#page=${pdfPage}` : ""}`
     : null;
 
   return (
@@ -362,15 +367,24 @@ export default function Home() {
                 />
 
                 <div className="min-w-0">
-                  <h3 className="text-sm font-semibold text-zinc-900">
-                    Document
+                  <h3 className="truncate text-sm font-semibold text-zinc-900">
+                    {selectedDocument
+                      ? selectedDocument.filename
+                      : "Document"}
                   </h3>
+
+                  {pdfPage && (
+                    <p className="text-xs text-zinc-400">
+                      Page {pdfPage}
+                    </p>
+                  )}
                 </div>
               </div>
 
               <div className="min-h-0 flex-1 bg-zinc-100">
                 {pdfUrl ? (
                   <iframe
+                    key={pdfUrl}
                     src={pdfUrl}
                     title="PDF document"
                     className="h-full w-full border-0"
@@ -416,6 +430,7 @@ export default function Home() {
                 onQuestionChange={setQuestion}
                 onChat={handleChat}
                 onKeyDown={handleKeyDown}
+                onSourceClick={handleSourceClick}
               />
             </div>
           </div>

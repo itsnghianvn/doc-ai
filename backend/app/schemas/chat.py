@@ -14,6 +14,8 @@ class ChatRequest(BaseModel):
 
 class Source(BaseModel):
     chunk_id: str
+    document_id: str
+    chunk_index: int | None = None
     score: float
     content: str
     start: int
