@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import {
   FileText,
   Loader2,
@@ -23,7 +24,6 @@ import {
 } from "@/lib/api";
 
 import { ChatWindow } from "@/components/chat/chat-window";
-import { PdfViewer } from "@/components/document/pdf-viewer";
 import { UploadDocument } from "@/components/document/upload-document";
 import { Sidebar } from "@/components/layout/sidebar";
 
@@ -33,6 +33,13 @@ import type { Document } from "@/types/document";
 
 type MobilePane = "document" | "chat";
 const MAX_PDF_SIZE_BYTES = 20 * 1024 * 1024;
+const PdfViewer = dynamic(
+  () =>
+    import("@/components/document/pdf-viewer").then(
+      (module) => module.PdfViewer
+    ),
+  { ssr: false }
+);
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
@@ -55,6 +62,8 @@ export default function Home() {
   ] = useState<Conversation | null>(null);
 
   const [pdfPage, setPdfPage] = useState<number | null>(null);
+  const [activeSource, setActiveSource] =
+    useState<Source | null>(null);
   const [mobilePane, setMobilePane] =
     useState<MobilePane>("document");
 
@@ -328,6 +337,7 @@ export default function Home() {
 
       setSelectedDocument(data);
       setPdfPage(null);
+      setActiveSource(null);
       setMobilePane("document");
       setConversations([]);
       setSelectedConversation(null);
@@ -357,6 +367,7 @@ export default function Home() {
   ) => {
     setSelectedDocument(document);
     setPdfPage(null);
+    setActiveSource(null);
     setMobilePane("document");
     setConversations([]);
     setSelectedConversation(null);
@@ -405,6 +416,7 @@ export default function Home() {
 
         setSelectedDocument(nextDocument);
         setPdfPage(null);
+        setActiveSource(null);
         setConversations([]);
         setSelectedConversation(null);
 
@@ -709,6 +721,7 @@ export default function Home() {
     }
 
     setPdfPage(source.page_start);
+    setActiveSource(source);
     setMobilePane("document");
   };
 
@@ -866,9 +879,17 @@ export default function Home() {
             >
               <div className="min-h-0 min-w-0 flex-1">
                 <PdfViewer
+                  key={
+                    selectedDocument?.document_id ??
+                    "no-document"
+                  }
                   document={selectedDocument}
                   page={pdfPage}
-                  onPageChange={setPdfPage}
+                  source={activeSource}
+                  onPageChange={(page) => {
+                    setPdfPage(page);
+                    setActiveSource(null);
+                  }}
                 />
               </div>
             </div>

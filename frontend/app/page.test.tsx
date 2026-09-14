@@ -23,6 +23,26 @@ vi.mock("@/lib/api", () => ({
     fallback,
 }));
 
+vi.mock("@/components/document/pdf-viewer", () => ({
+  PdfViewer: ({
+    document,
+    page,
+    source,
+  }: {
+    document: { filename: string } | null;
+    page: number | null;
+    source?: { content: string } | null;
+  }) => (
+    <div
+      data-testid="pdf-viewer"
+      data-page={page ?? 1}
+      data-source={source?.content ?? ""}
+    >
+      {document?.filename ?? "No document"}
+    </div>
+  ),
+}));
+
 const document = {
   document_id: "document-123",
   filename: "guide.pdf",
@@ -91,10 +111,12 @@ describe("DocAI workspace", () => {
       })
     );
 
-    const viewer = screen.getByTitle(
-      "PDF document: guide.pdf"
+    const viewer = screen.getByTestId("pdf-viewer");
+    expect(viewer).toHaveAttribute("data-page", "2");
+    expect(viewer).toHaveAttribute(
+      "data-source",
+      "This evidence comes from page two."
     );
-    expect(viewer.getAttribute("src")).toContain("#page=2");
 
     await waitFor(() => {
       expect(apiMocks.chatWithDocument).toHaveBeenCalledWith(
@@ -126,9 +148,11 @@ describe("DocAI workspace", () => {
       })
     );
 
-    expect(
-      await screen.findByTitle("PDF document: second.pdf")
-    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId("pdf-viewer")).toHaveTextContent(
+        "second.pdf"
+      );
+    });
     expect(apiMocks.getConversations).toHaveBeenCalledWith(
       secondDocument.document_id
     );

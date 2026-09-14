@@ -128,3 +128,15 @@
     @apply font-sans;
   }
 }
+
+.react-pdf__Page {
+  overflow: hidden;
+  background: white;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 10%);
+}
+
+.react-pdf__Page__textContent .docai-source-highlight {
+  border-radius: 2px;
+  background: rgb(250 204 21 / 42%) !important;
+  box-shadow: 0 0 0 1px rgb(245 158 11 / 20%);
+}
