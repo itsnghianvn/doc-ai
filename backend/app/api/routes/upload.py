@@ -1,12 +1,23 @@
 from pathlib import Path
 
-from fastapi import APIRouter, File, HTTPException, UploadFile
+from fastapi import (
+    APIRouter,
+    Depends,
+    File,
+    HTTPException,
+    UploadFile,
+)
 from fastapi.responses import FileResponse
+from sqlalchemy.orm import Session
 
+from app.db.database import get_db
 from app.services.pdf_service import save_pdf
 from app.services.embedding_service import EmbeddingService
 from app.services.qdrant_service import upsert_chunks
-from app.services.document_service import get_documents, save_document
+from app.services.document_service import (
+    get_document_by_filename,
+    save_document,
+)
 
 router = APIRouter(
     prefix="/upload",
@@ -21,7 +32,10 @@ embedding_service = EmbeddingService()
 
 
 @router.post("/")
-async def upload_pdf(file: UploadFile = File(...)):
+async def upload_pdf(
+    file: UploadFile = File(...),
+    db: Session = Depends(get_db),
+):
     filename = file.filename or ""
     safe_filename = Path(filename).name
 
@@ -44,10 +58,7 @@ async def upload_pdf(file: UploadFile = File(...)):
             detail="Only PDF files are allowed.",
         )
 
-    if any(
-        document["filename"] == safe_filename
-        for document in get_documents()
-    ):
+    if get_document_by_filename(db, safe_filename):
         raise HTTPException(
             status_code=409,
             detail="A document with this filename already exists.",
@@ -82,7 +93,7 @@ async def upload_pdf(file: UploadFile = File(...)):
             document_id=document["document_id"],
         )
 
-        return save_document(document)
+        return save_document(db, document)
     except Exception:
         file_path.unlink(missing_ok=True)
         raise

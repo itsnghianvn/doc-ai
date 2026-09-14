@@ -4,6 +4,10 @@ from types import SimpleNamespace
 
 
 os.environ.setdefault("GEMINI_API_KEY", "test-key")
+os.environ.setdefault(
+    "DATABASE_URL",
+    "sqlite+pysqlite:///:memory:",
+)
 
 from app.services.reranking_service import RerankingService
 

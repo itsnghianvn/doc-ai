@@ -8,6 +8,10 @@ from unittest.mock import patch
 import fitz
 
 os.environ.setdefault("GEMINI_API_KEY", "test-key")
+os.environ.setdefault(
+    "DATABASE_URL",
+    "sqlite+pysqlite:///:memory:",
+)
 
 from app.schemas.chat import Source
 from app.core.config import settings

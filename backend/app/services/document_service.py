@@ -1,87 +1,80 @@
-import json
-from datetime import datetime, timezone
-from pathlib import Path
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.db.models import DocumentModel
 
 
-DATA_FILE = Path("app/data/documents.json")
-
-
-def _load_documents() -> list[dict]:
-    if not DATA_FILE.exists():
-        return []
-
-    with DATA_FILE.open("r", encoding="utf-8") as file:
-        return json.load(file)
-
-
-def _save_documents(documents: list[dict]) -> None:
-    DATA_FILE.parent.mkdir(parents=True, exist_ok=True)
-
-    with DATA_FILE.open("w", encoding="utf-8") as file:
-        json.dump(
-            documents,
-            file,
-            ensure_ascii=False,
-            indent=2,
-        )
-
-
-def save_document(document: dict) -> dict:
-    documents = _load_documents()
-
-    document_record = {
-        "document_id": document["document_id"],
-        "filename": document["filename"],
-        "pages": document["pages"],
-        "characters": document["characters"],
-        "chunk_count": document["chunk_count"],
-        "preview": document["preview"],
-        "created_at": datetime.now(timezone.utc).isoformat(),
+def _to_dict(document: DocumentModel) -> dict:
+    return {
+        "document_id": document.document_id,
+        "filename": document.filename,
+        "pages": document.pages,
+        "characters": document.characters,
+        "chunk_count": document.chunk_count,
+        "preview": document.preview,
+        "status": document.status,
+        "error_message": document.error_message,
+        "created_at": document.created_at,
     }
 
-    documents.append(document_record)
-    _save_documents(documents)
 
-    return document_record
-
-
-def get_documents() -> list[dict]:
-    return _load_documents()
-
-
-def get_document(document_id: str) -> dict | None:
-    documents = _load_documents()
-
-    return next(
-        (
-            document
-            for document in documents
-            if document["document_id"] == document_id
-        ),
-        None,
+def save_document(db: Session, document: dict) -> dict:
+    record = DocumentModel(
+        document_id=document["document_id"],
+        filename=document["filename"],
+        pages=document["pages"],
+        characters=document["characters"],
+        chunk_count=document["chunk_count"],
+        preview=document["preview"],
+        status=document.get("status", "ready"),
+        error_message=document.get("error_message"),
     )
 
-def delete_document(document_id: str) -> bool:
-    documents = _load_documents()
+    db.add(record)
+    db.commit()
+    db.refresh(record)
 
-    document = next(
-        (
-            document
-            for document in documents
-            if document["document_id"] == document_id
-        ),
-        None,
+    return _to_dict(record)
+
+
+def get_documents(db: Session) -> list[dict]:
+    documents = db.scalars(
+        select(DocumentModel).order_by(
+            DocumentModel.created_at.desc()
+        )
+    ).all()
+
+    return [_to_dict(document) for document in documents]
+
+
+def get_document(
+    db: Session,
+    document_id: str,
+) -> dict | None:
+    document = db.get(DocumentModel, document_id)
+
+    return _to_dict(document) if document else None
+
+
+def get_document_by_filename(
+    db: Session,
+    filename: str,
+) -> dict | None:
+    document = db.scalar(
+        select(DocumentModel).where(
+            DocumentModel.filename == filename
+        )
     )
 
-    if document is None:
+    return _to_dict(document) if document else None
+
+
+def delete_document(db: Session, document_id: str) -> bool:
+    document = db.get(DocumentModel, document_id)
+    if not document:
         return False
 
-    filtered_documents = [
-        item
-        for item in documents
-        if item["document_id"] != document_id
-    ]
-
-    _save_documents(filtered_documents)
+    db.delete(document)
+    db.commit()
 
     return True

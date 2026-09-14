@@ -2,6 +2,9 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     GEMINI_API_KEY: str
+    DATABASE_URL: str = (
+        "postgresql+psycopg://docai:docai@localhost:5432/docai"
+    )
     GEMINI_GENERATION_MODEL: str = "gemini-3.5-flash"
     GEMINI_EMBEDDING_MODEL: str = "gemini-embedding-001"
 

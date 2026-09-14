@@ -17,6 +17,13 @@ export function DocumentCard({
   onSelect,
   onDelete,
 }: DocumentCardProps) {
+  const statusLabel =
+    document.status === "processing"
+      ? "Processing"
+      : document.status === "failed"
+        ? "Failed"
+        : "Ready";
+
   return (
     <div
       className={`group flex items-center gap-3 rounded-xl border p-3 transition ${
@@ -50,8 +57,16 @@ export function DocumentCard({
           </p>
 
           <p className="mt-1 flex items-center gap-1.5 text-[11px] text-zinc-400">
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-            Ready
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${
+                document.status === "processing"
+                  ? "bg-amber-500"
+                  : document.status === "failed"
+                    ? "bg-red-500"
+                    : "bg-emerald-500"
+              }`}
+            />
+            {statusLabel}
           </p>
         </div>
       </button>

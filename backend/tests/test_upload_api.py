@@ -6,6 +6,10 @@ from fastapi.testclient import TestClient
 
 
 os.environ.setdefault("GEMINI_API_KEY", "test-key")
+os.environ.setdefault(
+    "DATABASE_URL",
+    "sqlite+pysqlite:///:memory:",
+)
 
 from app.main import app
 
@@ -15,8 +19,8 @@ class UploadApiTests(unittest.TestCase):
         self.client = TestClient(app)
 
     @patch(
-        "app.api.routes.upload.get_documents",
-        return_value=[],
+        "app.api.routes.upload.get_document_by_filename",
+        return_value=None,
     )
     def test_rejects_file_with_invalid_pdf_signature(self, _):
         response = self.client.post(
@@ -37,8 +41,8 @@ class UploadApiTests(unittest.TestCase):
         )
 
     @patch(
-        "app.api.routes.upload.get_documents",
-        return_value=[],
+        "app.api.routes.upload.get_document_by_filename",
+        return_value=None,
     )
     def test_rejects_oversized_pdf(self, _):
         with patch(
@@ -59,8 +63,8 @@ class UploadApiTests(unittest.TestCase):
         self.assertEqual(response.status_code, 413)
 
     @patch(
-        "app.api.routes.upload.get_documents",
-        return_value=[{"filename": "duplicate.pdf"}],
+        "app.api.routes.upload.get_document_by_filename",
+        return_value={"filename": "duplicate.pdf"},
     )
     def test_rejects_duplicate_filename(self, _):
         response = self.client.post(

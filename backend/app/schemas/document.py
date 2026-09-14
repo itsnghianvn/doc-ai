@@ -10,4 +10,6 @@ class Document(BaseModel):
     characters: int
     chunk_count: int
     preview: str
+    status: str = "ready"
+    error_message: str | None = None
     created_at: datetime
