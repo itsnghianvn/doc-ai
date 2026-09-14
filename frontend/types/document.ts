@@ -4,6 +4,6 @@ export type Document = {
   pages: number;
   characters: number;
   chunk_count: number;
-  chunks: unknown[];
   preview: string;
+  created_at: string;
 };

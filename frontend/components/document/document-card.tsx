@@ -48,13 +48,18 @@ export function DocumentCard({
             {document.pages === 1 ? "page" : "pages"}{" "}
             · {document.chunk_count} chunks
           </p>
+
+          <p className="mt-1 flex items-center gap-1.5 text-[11px] text-zinc-400">
+            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+            Ready
+          </p>
         </div>
       </button>
 
       <button
         type="button"
         onClick={() => onDelete(document.document_id)}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-400 opacity-0 transition hover:bg-red-50 hover:text-red-500 group-hover:opacity-100"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-red-50 hover:text-red-500 md:opacity-0 md:group-hover:opacity-100"
         title="Delete document"
       >
         <Trash2 size={15} />

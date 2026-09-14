@@ -12,22 +12,26 @@ import {
 import {
   chatWithDocument,
   deleteDocument,
+  getApiErrorMessage,
   getDocuments,
   uploadDocument,
 } from "@/lib/api";
 
 import { ChatWindow } from "@/components/chat/chat-window";
 import { PdfViewer } from "@/components/document/pdf-viewer";
+import { UploadDocument } from "@/components/document/upload-document";
 import { Sidebar } from "@/components/layout/sidebar";
 
 import type { Message, Source } from "@/types/chat";
 import type { Document } from "@/types/document";
 
 type MobilePane = "document" | "chat";
+const MAX_PDF_SIZE_BYTES = 20 * 1024 * 1024;
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
 
   const [documents, setDocuments] = useState<Document[]>([]);
   const [selectedDocument, setSelectedDocument] =
@@ -44,6 +48,7 @@ export default function Home() {
   const [error, setError] = useState("");
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const dragDepthRef = useRef(0);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   /*
@@ -61,7 +66,12 @@ export default function Home() {
         }
       } catch (err) {
         console.error("Failed to load documents:", err);
-        setError("Failed to load documents.");
+        setError(
+          getApiErrorMessage(
+            err,
+            "Failed to load documents."
+          )
+        );
       }
     };
 
@@ -84,6 +94,29 @@ export default function Home() {
     fileInputRef.current?.click();
   };
 
+  const selectFile = (selectedFile: File) => {
+    setError("");
+
+    const hasPdfExtension =
+      selectedFile.name.toLowerCase().endsWith(".pdf");
+    const hasAllowedType =
+      !selectedFile.type ||
+      selectedFile.type === "application/pdf" ||
+      selectedFile.type === "application/octet-stream";
+
+    if (!hasPdfExtension || !hasAllowedType) {
+      setError("Please select a valid PDF file.");
+      return;
+    }
+
+    if (selectedFile.size > MAX_PDF_SIZE_BYTES) {
+      setError("PDF files must be 20 MB or smaller.");
+      return;
+    }
+
+    setFile(selectedFile);
+  };
+
   /*
    * Select PDF
    */
@@ -95,18 +128,44 @@ export default function Home() {
 
     event.target.value = "";
 
-    setError("");
-
     if (!selectedFile) {
       return;
     }
 
-    if (selectedFile.type !== "application/pdf") {
-      setError("Please select a PDF file.");
-      return;
-    }
+    selectFile(selectedFile);
+  };
 
-    setFile(selectedFile);
+  const handleDragEnter = (
+    event: React.DragEvent<HTMLDivElement>
+  ) => {
+    event.preventDefault();
+    dragDepthRef.current += 1;
+    setDragActive(true);
+  };
+
+  const handleDragLeave = (
+    event: React.DragEvent<HTMLDivElement>
+  ) => {
+    event.preventDefault();
+    dragDepthRef.current -= 1;
+
+    if (dragDepthRef.current <= 0) {
+      dragDepthRef.current = 0;
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (
+    event: React.DragEvent<HTMLDivElement>
+  ) => {
+    event.preventDefault();
+    dragDepthRef.current = 0;
+    setDragActive(false);
+
+    const droppedFile = event.dataTransfer.files[0];
+    if (droppedFile) {
+      selectFile(droppedFile);
+    }
   };
 
   /*
@@ -138,7 +197,12 @@ export default function Home() {
       setFile(null);
     } catch (err) {
       console.error("Upload error:", err);
-      setError("Upload failed. Please try again.");
+      setError(
+        getApiErrorMessage(
+          err,
+          "Upload failed. Please try again."
+        )
+      );
     } finally {
       setLoading(false);
     }
@@ -165,6 +229,17 @@ export default function Home() {
   const handleDeleteDocument = async (
     documentId: string
   ) => {
+    const document = documents.find(
+      (item) => item.document_id === documentId
+    );
+
+    if (
+      document &&
+      !window.confirm(`Delete "${document.filename}"?`)
+    ) {
+      return;
+    }
+
     try {
       setError("");
 
@@ -195,7 +270,10 @@ export default function Home() {
       console.error("Delete error:", err);
 
       setError(
-        "Failed to delete document. Please try again."
+        getApiErrorMessage(
+          err,
+          "Failed to delete document. Please try again."
+        )
       );
     }
   };
@@ -256,7 +334,10 @@ export default function Home() {
       console.error("Chat error:", err);
 
       setError(
-        "Failed to get an answer. Please try again."
+        getApiErrorMessage(
+          err,
+          "Failed to get an answer. Please try again."
+        )
       );
     } finally {
       setChatLoading(false);
@@ -306,7 +387,13 @@ export default function Home() {
   };
 
   return (
-    <div className="flex h-dvh overflow-hidden bg-zinc-50">
+    <div
+      className="flex h-dvh overflow-hidden bg-zinc-50"
+      onDragEnter={handleDragEnter}
+      onDragOver={(event) => event.preventDefault()}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       {/* Hidden file input */}
       <input
         ref={fileInputRef}
@@ -488,51 +575,18 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Selected file upload confirmation */}
-        {file && !loading && (
-          <div className="fixed bottom-5 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-2xl border bg-white p-4 shadow-xl">
-            <div className="flex items-center gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zinc-100">
-                <FileText
-                  size={17}
-                  className="text-zinc-600"
-                />
-              </div>
-
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-sm font-medium text-zinc-900">
-                  {file.name}
-                </p>
-
-                <p className="mt-0.5 text-xs text-zinc-500">
-                  Ready to upload
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleUpload}
-                className="rounded-lg bg-black px-3 py-2 text-xs font-medium text-white transition hover:bg-zinc-800"
-              >
-                Upload
-              </button>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setFile(null)}
-              className="mt-2 text-xs text-zinc-400 transition hover:text-zinc-700"
-            >
-              Cancel
-            </button>
-          </div>
-        )}
+        <UploadDocument
+          file={file}
+          loading={loading}
+          onUpload={handleUpload}
+          onCancel={() => setFile(null)}
+        />
 
         {/* Error */}
         {error && (
           <div
             role="alert"
-            className="fixed bottom-5 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 shadow-lg"
+            className="fixed right-4 top-4 z-[60] flex w-[calc(100%-2rem)] max-w-sm items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 shadow-lg"
           >
             <p className="min-w-0 flex-1 text-sm text-red-600">
               {error}
@@ -549,6 +603,23 @@ export default function Home() {
           </div>
         )}
       </main>
+
+      {dragActive && !loading && (
+        <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center bg-black/20 p-6">
+          <div className="rounded-2xl border-2 border-dashed border-zinc-400 bg-white px-10 py-8 text-center">
+            <Upload
+              size={24}
+              className="mx-auto text-zinc-600"
+            />
+            <p className="mt-3 text-sm font-semibold text-zinc-800">
+              Drop your PDF here
+            </p>
+            <p className="mt-1 text-xs text-zinc-500">
+              Maximum file size: 20 MB
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

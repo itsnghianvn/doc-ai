@@ -6,6 +6,20 @@ const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
 });
 
+export const getApiErrorMessage = (
+  error: unknown,
+  fallback: string,
+) => {
+  if (
+    axios.isAxiosError(error) &&
+    typeof error.response?.data?.detail === "string"
+  ) {
+    return error.response.data.detail;
+  }
+
+  return fallback;
+};
+
 export const healthCheck = async () => {
   const response = await api.get("/health");
   return response.data;
