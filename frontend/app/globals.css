@@ -137,6 +137,6 @@
 
 .react-pdf__Page__textContent .docai-source-highlight {
   border-radius: 2px;
-  background: rgb(250 204 21 / 42%) !important;
-  box-shadow: 0 0 0 1px rgb(245 158 11 / 20%);
+  background: rgb(255 246 0 / 68%) !important;
+  box-shadow: 0 0 0 1px rgb(255 230 0 / 35%);
 }
