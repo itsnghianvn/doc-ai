@@ -20,9 +20,10 @@ export function PdfViewer({
   page,
   onPageChange,
 }: PdfViewerProps) {
+  const totalPages = Math.max(document?.pages ?? 1, 1);
   const currentPage = Math.min(
     Math.max(page ?? 1, 1),
-    document?.pages ?? 1
+    totalPages
   );
   const baseUrl = document?.filename
     ? `${process.env.NEXT_PUBLIC_API_URL}/upload/${encodeURIComponent(
@@ -57,7 +58,7 @@ export function PdfViewer({
               {document?.filename ?? "Document"}
             </h3>
 
-            {document && (
+            {document && document.pages > 0 && (
               <p className="text-[11px] text-zinc-400">
                 {document.pages}{" "}
                 {document.pages === 1 ? "page" : "pages"}
@@ -66,7 +67,7 @@ export function PdfViewer({
           </div>
         </div>
 
-        {document && (
+        {document && document.pages > 0 && (
           <div className="flex shrink-0 items-center gap-1">
             <button
               type="button"

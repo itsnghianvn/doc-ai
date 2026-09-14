@@ -37,6 +37,24 @@ def save_document(db: Session, document: dict) -> dict:
     return _to_dict(record)
 
 
+def update_document(
+    db: Session,
+    document_id: str,
+    **values,
+) -> dict | None:
+    record = db.get(DocumentModel, document_id)
+    if not record:
+        return None
+
+    for field, value in values.items():
+        setattr(record, field, value)
+
+    db.commit()
+    db.refresh(record)
+
+    return _to_dict(record)
+
+
 def get_documents(db: Session) -> list[dict]:
     documents = db.scalars(
         select(DocumentModel).order_by(

@@ -63,6 +63,11 @@ export default function Home() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const dragDepthRef = useRef(0);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const selectedDocumentId =
+    selectedDocument?.document_id;
+  const hasProcessingDocuments = documents.some(
+    (document) => document.status === "processing"
+  );
 
   /*
    * Load documents
@@ -95,7 +100,7 @@ export default function Home() {
     let cancelled = false;
 
     const loadConversationHistory = async () => {
-      if (!selectedDocument) {
+      if (!selectedDocumentId) {
         setConversations([]);
         setSelectedConversation(null);
         setMessages([]);
@@ -105,7 +110,7 @@ export default function Home() {
       try {
         const availableConversations =
           await getConversations(
-            selectedDocument.document_id
+            selectedDocumentId
           );
 
         if (cancelled) {
@@ -154,7 +159,63 @@ export default function Home() {
     return () => {
       cancelled = true;
     };
-  }, [selectedDocument]);
+  }, [selectedDocumentId]);
+
+  useEffect(() => {
+    if (
+      !documents.some(
+        (document) => document.status === "processing"
+      )
+    ) {
+      return;
+    }
+
+    const interval = window.setInterval(async () => {
+      try {
+        const refreshedDocuments = await getDocuments();
+
+        setDocuments(refreshedDocuments);
+        setSelectedDocument((current) => {
+          if (!current) {
+            return current;
+          }
+
+          return (
+            refreshedDocuments.find(
+              (document) =>
+                document.document_id === current.document_id
+            ) ?? null
+          );
+        });
+
+        const failedDocument = refreshedDocuments.find(
+          (document) =>
+            document.status === "failed" &&
+            documents.some(
+              (previous) =>
+                previous.document_id === document.document_id &&
+                previous.status === "processing"
+            )
+        );
+
+        if (failedDocument) {
+          setError(
+            failedDocument.error_message ||
+              `Failed to process ${failedDocument.filename}.`
+          );
+        }
+      } catch (err) {
+        setError(
+          getApiErrorMessage(
+            err,
+            "Failed to refresh document status."
+          )
+        );
+      }
+    }, 2000);
+
+    return () => window.clearInterval(interval);
+  }, [documents]);
 
   /*
    * Auto scroll chat
@@ -382,6 +443,16 @@ export default function Home() {
     if (!selectedDocument.document_id) {
       setError(
         "Selected document is missing document ID."
+      );
+      return;
+    }
+
+    if (selectedDocument.status !== "ready") {
+      setError(
+        selectedDocument.status === "failed"
+          ? selectedDocument.error_message ||
+              "Document processing failed."
+          : "Please wait until the document is ready."
       );
       return;
     }
@@ -730,7 +801,7 @@ export default function Home() {
           </select>
 
           <div className="flex shrink-0 items-center gap-2">
-            {loading && (
+            {(loading || hasProcessingDocuments) && (
               <div className="flex items-center gap-2 rounded-lg bg-zinc-100 px-2.5 py-2 text-xs text-zinc-600">
                 <Loader2
                   size={14}
@@ -809,7 +880,8 @@ export default function Home() {
                   ? "block"
                   : "hidden"
               } md:block ${
-                !selectedDocument
+                !selectedDocument ||
+                selectedDocument.status !== "ready"
                   ? "pointer-events-none opacity-50"
                   : ""
               }`}

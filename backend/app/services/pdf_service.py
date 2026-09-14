@@ -9,10 +9,13 @@ from .chunk_service import chunk_text, normalize_text
 PREVIEW_LENGTH = 500
 
 
-def save_pdf(file_path: Path) -> dict:
+def save_pdf(
+    file_path: Path,
+    document_id: str | None = None,
+) -> dict:
     """Read a PDF file and return document metadata."""
 
-    document_id = str(uuid.uuid4())
+    document_id = document_id or str(uuid.uuid4())
 
     full_text = ""
     chunks = []

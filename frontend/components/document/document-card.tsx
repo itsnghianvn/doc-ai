@@ -74,8 +74,13 @@ export function DocumentCard({
       <button
         type="button"
         onClick={() => onDelete(document.document_id)}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-red-50 hover:text-red-500 md:opacity-0 md:group-hover:opacity-100"
-        title="Delete document"
+        disabled={document.status === "processing"}
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-red-50 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-20 md:opacity-0 md:group-hover:opacity-100"
+        title={
+          document.status === "processing"
+            ? "Wait for processing to finish"
+            : "Delete document"
+        }
       >
         <Trash2 size={15} />
       </button>

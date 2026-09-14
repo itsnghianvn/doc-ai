@@ -5,6 +5,7 @@ import type {
   Conversation,
   ConversationMessage,
 } from "@/types/conversation";
+import type { Document } from "@/types/document";
 
 const api = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
@@ -29,12 +30,17 @@ export const healthCheck = async () => {
   return response.data;
 };
 
-export const uploadDocument = async (file: File) => {
+export const uploadDocument = async (
+  file: File,
+): Promise<Document> => {
   const formData = new FormData();
 
   formData.append("file", file);
 
-  const response = await api.post("/upload/", formData);
+  const response = await api.post<Document>(
+    "/upload/",
+    formData
+  );
 
   return response.data;
 };
@@ -55,8 +61,8 @@ export const chatWithDocument = async (
   return response.data;
 };
 
-export const getDocuments = async () => {
-  const response = await api.get("/documents/");
+export const getDocuments = async (): Promise<Document[]> => {
+  const response = await api.get<Document[]>("/documents/");
   return response.data;
 };
 

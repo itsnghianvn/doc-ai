@@ -1,7 +1,9 @@
 from pathlib import Path
+import uuid
 
 from fastapi import (
     APIRouter,
+    BackgroundTasks,
     Depends,
     File,
     HTTPException,
@@ -11,9 +13,10 @@ from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
-from app.services.pdf_service import save_pdf
-from app.services.embedding_service import EmbeddingService
-from app.services.qdrant_service import upsert_chunks
+from app.schemas.document import Document
+from app.services.document_processing_service import (
+    process_document,
+)
 from app.services.document_service import (
     get_document_by_filename,
     save_document,
@@ -28,11 +31,15 @@ router = APIRouter(
 UPLOAD_DIR = Path("uploads")
 UPLOAD_DIR.mkdir(exist_ok=True)
 MAX_PDF_SIZE_BYTES = 20 * 1024 * 1024
-embedding_service = EmbeddingService()
 
 
-@router.post("/")
+@router.post(
+    "/",
+    response_model=Document,
+    status_code=202,
+)
 async def upload_pdf(
+    background_tasks: BackgroundTasks,
     file: UploadFile = File(...),
     db: Session = Depends(get_db),
 ):
@@ -80,20 +87,29 @@ async def upload_pdf(
 
     file_path = UPLOAD_DIR / safe_filename
     file_path.write_bytes(contents)
+    document_id = str(uuid.uuid4())
 
     try:
-        document = save_pdf(file_path)
-
-        embedded_chunks = embedding_service.embed_chunks(
-            document["chunks"]
+        document = save_document(
+            db,
+            {
+                "document_id": document_id,
+                "filename": safe_filename,
+                "pages": 0,
+                "characters": 0,
+                "chunk_count": 0,
+                "preview": "",
+                "status": "processing",
+            },
         )
 
-        upsert_chunks(
-            embedded_chunks,
-            document_id=document["document_id"],
+        background_tasks.add_task(
+            process_document,
+            document_id,
+            file_path,
         )
 
-        return save_document(db, document)
+        return document
     except Exception:
         file_path.unlink(missing_ok=True)
         raise
