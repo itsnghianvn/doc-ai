@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FileText, Loader2 } from "lucide-react";
+import { FileText, Loader2, X } from "lucide-react";
 
 import {
   chatWithDocument,
@@ -190,8 +190,10 @@ export default function Home() {
   /*
    * Chat
    */
-  const handleChat = async () => {
-    const userQuestion = question.trim();
+  const handleChat = async (questionOverride?: string) => {
+    const userQuestion = (
+      questionOverride ?? question
+    ).trim();
 
     if (!userQuestion || chatLoading) {
       return;
@@ -246,6 +248,16 @@ export default function Home() {
     } finally {
       setChatLoading(false);
     }
+  };
+
+  const handleNewConversation = () => {
+    if (chatLoading) {
+      return;
+    }
+
+    setMessages([]);
+    setQuestion("");
+    setError("");
   };
 
   /*
@@ -428,7 +440,9 @@ export default function Home() {
                 chatLoading={chatLoading}
                 messagesEndRef={messagesEndRef}
                 onQuestionChange={setQuestion}
-                onChat={handleChat}
+                onChat={() => handleChat()}
+                onNewConversation={handleNewConversation}
+                onSuggestionClick={handleChat}
                 onKeyDown={handleKeyDown}
                 onSourceClick={handleSourceClick}
               />
@@ -478,10 +492,22 @@ export default function Home() {
 
         {/* Error */}
         {error && (
-          <div className="fixed bottom-5 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 shadow-lg">
-            <p className="text-sm text-red-600">
+          <div
+            role="alert"
+            className="fixed bottom-5 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 shadow-lg"
+          >
+            <p className="min-w-0 flex-1 text-sm text-red-600">
               {error}
             </p>
+
+            <button
+              type="button"
+              onClick={() => setError("")}
+              className="shrink-0 rounded p-0.5 text-red-400 transition hover:bg-red-100 hover:text-red-700"
+              aria-label="Dismiss error"
+            >
+              <X size={15} />
+            </button>
           </div>
         )}
       </main>
