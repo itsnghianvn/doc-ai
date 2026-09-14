@@ -1,5 +1,7 @@
 import logging
 
+from google.genai.errors import APIError
+
 from app.core.config import settings
 from app.services.embedding_service import EmbeddingService
 from app.services.llm_service import LLMService
@@ -36,10 +38,19 @@ class RAGService:
         ):
 
         
-        rewritten_question = self.query_rewrite_service.rewrite(
-            question=question,
-            history=history,
-        )
+        try:
+            rewritten_question = (
+                self.query_rewrite_service.rewrite(
+                    question=question,
+                    history=history,
+                )
+            )
+        except APIError:
+            logger.warning(
+                "Query rewriting failed; using original question.",
+                exc_info=True,
+            )
+            rewritten_question = question
 
         query_embedding = self.embedding_service.embed(
             rewritten_question

@@ -6,6 +6,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 import fitz
+from google.genai.errors import ServerError
 
 os.environ.setdefault("GEMINI_API_KEY", "test-key")
 os.environ.setdefault(
@@ -169,6 +170,58 @@ class SourcePipelineTests(unittest.TestCase):
                 }
             ],
         )
+
+    def test_rag_falls_back_when_query_rewriting_is_unavailable(
+        self,
+    ):
+        def unavailable_rewrite(**_):
+            raise ServerError(
+                503,
+                {
+                    "error": {
+                        "message": "Model busy.",
+                        "status": "UNAVAILABLE",
+                    }
+                },
+            )
+
+        embedded_queries = []
+        service = object.__new__(RAGService)
+        service.query_rewrite_service = SimpleNamespace(
+            rewrite=unavailable_rewrite
+        )
+        service.embedding_service = SimpleNamespace(
+            embed=lambda query: (
+                embedded_queries.append(query) or [0.1]
+            )
+        )
+
+        with (
+            patch(
+                "app.services.rag_service.search_chunks",
+                return_value=[],
+            ),
+            self.assertLogs(
+                "app.services.rag_service",
+                level="WARNING",
+            ),
+        ):
+            response = service.ask(
+                question="What about healthcare?",
+                document_id="document-123",
+                history=[
+                    {
+                        "role": "user",
+                        "content": "Tell me about AI.",
+                    }
+                ],
+            )
+
+        self.assertEqual(
+            embedded_queries,
+            ["What about healthcare?"],
+        )
+        self.assertEqual(response["sources"], [])
 
     def test_source_schema_allows_missing_page_metadata(self):
         source = Source(

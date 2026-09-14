@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
+from google.genai.errors import APIError
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
@@ -49,11 +50,29 @@ def chat(
             request.conversation_id,
         )
 
-    result = rag.ask(
-        question=request.question,
-        document_id=request.document_id,
-        history=history,
-    )
+    try:
+        result = rag.ask(
+            question=request.question,
+            document_id=request.document_id,
+            history=history,
+        )
+    except APIError as error:
+        if error.code == 429:
+            raise HTTPException(
+                status_code=429,
+                detail=(
+                    "Gemini rate limit reached. "
+                    "Please wait and try again."
+                ),
+            ) from error
+
+        raise HTTPException(
+            status_code=503,
+            detail=(
+                "Gemini is temporarily unavailable. "
+                "Please try again shortly."
+            ),
+        ) from error
 
     if request.conversation_id:
         save_exchange(
