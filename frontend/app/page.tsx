@@ -11,9 +11,14 @@ import {
 
 import {
   chatWithDocument,
+  createConversation,
+  deleteConversation,
   deleteDocument,
   getApiErrorMessage,
+  getConversationMessages,
+  getConversations,
   getDocuments,
+  renameConversation,
   uploadDocument,
 } from "@/lib/api";
 
@@ -23,6 +28,7 @@ import { UploadDocument } from "@/components/document/upload-document";
 import { Sidebar } from "@/components/layout/sidebar";
 
 import type { Message, Source } from "@/types/chat";
+import type { Conversation } from "@/types/conversation";
 import type { Document } from "@/types/document";
 
 type MobilePane = "document" | "chat";
@@ -40,6 +46,13 @@ export default function Home() {
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
   const [chatLoading, setChatLoading] = useState(false);
+  const [conversations, setConversations] = useState<
+    Conversation[]
+  >([]);
+  const [
+    selectedConversation,
+    setSelectedConversation,
+  ] = useState<Conversation | null>(null);
 
   const [pdfPage, setPdfPage] = useState<number | null>(null);
   const [mobilePane, setMobilePane] =
@@ -77,6 +90,71 @@ export default function Home() {
 
     loadDocuments();
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadConversationHistory = async () => {
+      if (!selectedDocument) {
+        setConversations([]);
+        setSelectedConversation(null);
+        setMessages([]);
+        return;
+      }
+
+      try {
+        const availableConversations =
+          await getConversations(
+            selectedDocument.document_id
+          );
+
+        if (cancelled) {
+          return;
+        }
+
+        setConversations(availableConversations);
+
+        const conversation =
+          availableConversations[0] ?? null;
+        setSelectedConversation(conversation);
+
+        if (!conversation) {
+          setMessages([]);
+          return;
+        }
+
+        const storedMessages =
+          await getConversationMessages(
+            conversation.conversation_id
+          );
+
+        if (!cancelled) {
+          setMessages(
+            storedMessages.map((message) => ({
+              role: message.role,
+              content: message.content,
+              sources: message.sources ?? undefined,
+            }))
+          );
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(
+            getApiErrorMessage(
+              err,
+              "Failed to load conversation history."
+            )
+          );
+        }
+      }
+    };
+
+    loadConversationHistory();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedDocument]);
 
   /*
    * Auto scroll chat
@@ -190,6 +268,8 @@ export default function Home() {
       setSelectedDocument(data);
       setPdfPage(null);
       setMobilePane("document");
+      setConversations([]);
+      setSelectedConversation(null);
 
       setMessages([]);
       setQuestion("");
@@ -217,6 +297,8 @@ export default function Home() {
     setSelectedDocument(document);
     setPdfPage(null);
     setMobilePane("document");
+    setConversations([]);
+    setSelectedConversation(null);
 
     setMessages([]);
     setQuestion("");
@@ -262,6 +344,8 @@ export default function Home() {
 
         setSelectedDocument(nextDocument);
         setPdfPage(null);
+        setConversations([]);
+        setSelectedConversation(null);
 
         setMessages([]);
         setQuestion("");
@@ -306,6 +390,20 @@ export default function Home() {
       setChatLoading(true);
       setError("");
 
+      let activeConversation = selectedConversation;
+
+      if (!activeConversation) {
+        const createdConversation = await createConversation(
+          selectedDocument.document_id
+        );
+        activeConversation = createdConversation;
+        setConversations((prev) => [
+          createdConversation,
+          ...prev,
+        ]);
+        setSelectedConversation(activeConversation);
+      }
+
       setMessages((prev) => [
         ...prev,
         {
@@ -319,7 +417,8 @@ export default function Home() {
       const data = await chatWithDocument(
         userQuestion,
         selectedDocument.document_id,
-        messages
+        messages,
+        activeConversation.conversation_id
       );
 
       setMessages((prev) => [
@@ -330,6 +429,24 @@ export default function Home() {
           sources: data.sources,
         },
       ]);
+
+      if (activeConversation.title === "New conversation") {
+        const updatedConversation = {
+          ...activeConversation,
+          title: userQuestion.slice(0, 120),
+          updated_at: new Date().toISOString(),
+        };
+
+        setSelectedConversation(updatedConversation);
+        setConversations((prev) =>
+          prev.map((conversation) =>
+            conversation.conversation_id ===
+            updatedConversation.conversation_id
+              ? updatedConversation
+              : conversation
+          )
+        );
+      }
     } catch (err) {
       console.error("Chat error:", err);
 
@@ -344,14 +461,152 @@ export default function Home() {
     }
   };
 
-  const handleNewConversation = () => {
+  const handleNewConversation = async () => {
     if (chatLoading) {
       return;
     }
 
-    setMessages([]);
-    setQuestion("");
-    setError("");
+    if (!selectedDocument) {
+      setError("Please select a document first.");
+      return;
+    }
+
+    try {
+      const conversation = await createConversation(
+        selectedDocument.document_id
+      );
+
+      setConversations((prev) => [
+        conversation,
+        ...prev,
+      ]);
+      setSelectedConversation(conversation);
+      setMessages([]);
+      setQuestion("");
+      setError("");
+    } catch (err) {
+      setError(
+        getApiErrorMessage(
+          err,
+          "Failed to create a conversation."
+        )
+      );
+    }
+  };
+
+  const handleConversationChange = async (
+    conversationId: string
+  ) => {
+    const conversation = conversations.find(
+      (item) => item.conversation_id === conversationId
+    );
+    if (!conversation) {
+      return;
+    }
+
+    try {
+      const storedMessages =
+        await getConversationMessages(conversationId);
+
+      setSelectedConversation(conversation);
+      setMessages(
+        storedMessages.map((message) => ({
+          role: message.role,
+          content: message.content,
+          sources: message.sources ?? undefined,
+        }))
+      );
+      setQuestion("");
+      setError("");
+    } catch (err) {
+      setError(
+        getApiErrorMessage(
+          err,
+          "Failed to load the conversation."
+        )
+      );
+    }
+  };
+
+  const handleRenameConversation = async () => {
+    if (!selectedConversation) {
+      return;
+    }
+
+    const title = window.prompt(
+      "Conversation name",
+      selectedConversation.title
+    )?.trim();
+
+    if (!title || title === selectedConversation.title) {
+      return;
+    }
+
+    try {
+      const updated = await renameConversation(
+        selectedConversation.conversation_id,
+        title
+      );
+
+      setSelectedConversation(updated);
+      setConversations((prev) =>
+        prev.map((conversation) =>
+          conversation.conversation_id ===
+          updated.conversation_id
+            ? updated
+            : conversation
+        )
+      );
+    } catch (err) {
+      setError(
+        getApiErrorMessage(
+          err,
+          "Failed to rename the conversation."
+        )
+      );
+    }
+  };
+
+  const handleDeleteConversation = async () => {
+    if (
+      !selectedConversation ||
+      !window.confirm(
+        `Delete "${selectedConversation.title}"?`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await deleteConversation(
+        selectedConversation.conversation_id
+      );
+
+      const remaining = conversations.filter(
+        (conversation) =>
+          conversation.conversation_id !==
+          selectedConversation.conversation_id
+      );
+      const nextConversation = remaining[0] ?? null;
+
+      setConversations(remaining);
+      setSelectedConversation(nextConversation);
+      setMessages([]);
+      setQuestion("");
+
+      if (nextConversation) {
+        await handleConversationChange(
+          nextConversation.conversation_id
+        );
+      }
+    } catch (err) {
+      setError(
+        getApiErrorMessage(
+          err,
+          "Failed to delete the conversation."
+        )
+      );
+    }
   };
 
   /*
@@ -563,10 +818,15 @@ export default function Home() {
                 messages={messages}
                 question={question}
                 chatLoading={chatLoading}
+                conversations={conversations}
+                selectedConversation={selectedConversation}
                 messagesEndRef={messagesEndRef}
                 onQuestionChange={setQuestion}
                 onChat={() => handleChat()}
                 onNewConversation={handleNewConversation}
+                onConversationChange={handleConversationChange}
+                onRenameConversation={handleRenameConversation}
+                onDeleteConversation={handleDeleteConversation}
                 onSuggestionClick={handleChat}
                 onKeyDown={handleKeyDown}
                 onSourceClick={handleSourceClick}

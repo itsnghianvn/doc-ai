@@ -5,21 +5,29 @@ import {
   FileText,
   Loader2,
   MessageSquarePlus,
+  Pencil,
   Sparkles,
+  Trash2,
 } from "lucide-react";
 
 import { ChatInput } from "@/components/chat/chat-input";
 import { ChatMessage } from "@/components/chat/chat-message";
 import type { Message, Source } from "@/types/chat";
+import type { Conversation } from "@/types/conversation";
 
 type ChatWindowProps = {
   messages: Message[];
   question: string;
   chatLoading: boolean;
+  conversations: Conversation[];
+  selectedConversation: Conversation | null;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   onQuestionChange: (value: string) => void;
   onChat: () => void;
   onNewConversation: () => void;
+  onConversationChange: (conversationId: string) => void;
+  onRenameConversation: () => void;
+  onDeleteConversation: () => void;
   onSuggestionClick: (question: string) => void;
   onKeyDown: (
     event: React.KeyboardEvent<HTMLTextAreaElement>
@@ -31,10 +39,15 @@ export function ChatWindow({
   messages,
   question,
   chatLoading,
+  conversations,
+  selectedConversation,
   messagesEndRef,
   onQuestionChange,
   onChat,
   onNewConversation,
+  onConversationChange,
+  onRenameConversation,
+  onDeleteConversation,
   onSuggestionClick,
   onKeyDown,
   onSourceClick,
@@ -48,33 +61,80 @@ export function ChatWindow({
   return (
     <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
       {/* Header */}
-      <div className="flex min-h-14 items-center justify-between gap-3 border-b border-zinc-200 px-4 py-3 sm:px-5">
-        <div className="flex min-w-0 items-center gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-black text-white">
-            <Bot size={16} />
+      <div className="border-b border-zinc-200 px-4 py-3 sm:px-5">
+        <div className="flex min-h-8 items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-black text-white">
+              <Bot size={16} />
+            </div>
+
+            <div className="min-w-0">
+              <h2 className="truncate text-sm font-semibold text-zinc-900">
+                Chat with your document
+              </h2>
+
+              <p className="mt-0.5 hidden text-xs text-zinc-500 sm:block">
+                Answers are grounded in the selected PDF.
+              </p>
+            </div>
           </div>
 
-          <div className="min-w-0">
-            <h2 className="truncate text-sm font-semibold text-zinc-900">
-              Chat with your document
-            </h2>
-
-            <p className="mt-0.5 hidden text-xs text-zinc-500 sm:block">
-              Answers are grounded in the selected PDF.
-            </p>
-          </div>
+          <button
+            type="button"
+            onClick={onNewConversation}
+            disabled={chatLoading}
+            className="flex shrink-0 items-center gap-1.5 rounded-lg border border-zinc-200 px-2.5 py-1.5 text-xs font-medium text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900 disabled:cursor-not-allowed disabled:opacity-40"
+            title="Start a new conversation"
+          >
+            <MessageSquarePlus size={14} />
+            <span className="hidden sm:inline">New chat</span>
+          </button>
         </div>
 
-        <button
-          type="button"
-          onClick={onNewConversation}
-          disabled={messages.length === 0 || chatLoading}
-          className="flex shrink-0 items-center gap-1.5 rounded-lg border border-zinc-200 px-2.5 py-1.5 text-xs font-medium text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900 disabled:cursor-not-allowed disabled:opacity-40"
-          title="Clear the current conversation"
-        >
-          <MessageSquarePlus size={14} />
-          <span className="hidden sm:inline">New chat</span>
-        </button>
+        {conversations.length > 0 && (
+          <div className="mt-3 flex items-center gap-1.5">
+            <select
+              value={
+                selectedConversation?.conversation_id ?? ""
+              }
+              onChange={(event) =>
+                onConversationChange(event.target.value)
+              }
+              disabled={chatLoading}
+              className="min-w-0 flex-1 truncate rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs text-zinc-600 outline-none focus:border-zinc-400"
+              aria-label="Select conversation"
+            >
+              {conversations.map((conversation) => (
+                <option
+                  key={conversation.conversation_id}
+                  value={conversation.conversation_id}
+                >
+                  {conversation.title}
+                </option>
+              ))}
+            </select>
+
+            <button
+              type="button"
+              onClick={onRenameConversation}
+              disabled={!selectedConversation || chatLoading}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700 disabled:opacity-30"
+              aria-label="Rename conversation"
+            >
+              <Pencil size={13} />
+            </button>
+
+            <button
+              type="button"
+              onClick={onDeleteConversation}
+              disabled={!selectedConversation || chatLoading}
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-30"
+              aria-label="Delete conversation"
+            >
+              <Trash2 size={13} />
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Messages */}

@@ -9,6 +9,7 @@ class ChatMessage(BaseModel):
 class ChatRequest(BaseModel):
     question: str
     document_id: str
+    conversation_id: str | None = None
     history: list[ChatMessage] = Field(default_factory=list)
 
 
