@@ -44,6 +44,22 @@ class SourcePipelineTests(unittest.TestCase):
             self.assertTrue(
                 all(chunk["page_end"] is not None for chunk in chunks)
             )
+            self.assertTrue(
+                all(
+                    chunk["page_start"] == chunk["page_end"]
+                    for chunk in chunks
+                )
+            )
+            self.assertTrue(
+                all(
+                    chunk["document_id"] == result["document_id"]
+                    for chunk in chunks
+                )
+            )
+            self.assertEqual(
+                [chunk["chunk_index"] for chunk in chunks],
+                list(range(len(chunks))),
+            )
 
             covered_pages = {
                 page
@@ -58,7 +74,7 @@ class SourcePipelineTests(unittest.TestCase):
     def test_qdrant_payload_keeps_navigation_metadata(self):
         chunks = [
             {
-                "id": 3,
+                "chunk_index": 3,
                 "content": "A cited passage.",
                 "start": 20,
                 "end": 36,
