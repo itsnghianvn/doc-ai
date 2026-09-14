@@ -1,0 +1,55 @@
+{
+  "document_filename": "docai-rag-evaluation.pdf",
+  "questions": [
+    {
+      "id": "healthcare-01",
+      "question": "How is artificial intelligence used in healthcare?",
+      "expected_keywords": [
+        "medical images",
+        "disease detection",
+        "personalized treatment"
+      ],
+      "expected_pages": [1]
+    },
+    {
+      "id": "finance-01",
+      "question": "How do banks use machine learning to prevent financial crime?",
+      "expected_keywords": [
+        "transaction patterns",
+        "fraud",
+        "real time"
+      ],
+      "expected_pages": [1]
+    },
+    {
+      "id": "transport-01",
+      "question": "What transportation applications are described?",
+      "expected_keywords": [
+        "traffic signals",
+        "routes",
+        "congestion"
+      ],
+      "expected_pages": [2]
+    },
+    {
+      "id": "retail-01",
+      "question": "How can AI improve retail and supply-chain operations?",
+      "expected_keywords": [
+        "recommend products",
+        "forecast demand",
+        "inventory"
+      ],
+      "expected_pages": [2]
+    },
+    {
+      "id": "governance-01",
+      "question": "Which principles support responsible AI governance?",
+      "expected_keywords": [
+        "privacy",
+        "transparency",
+        "human oversight"
+      ],
+      "expected_pages": [3]
+    }
+  ]
+}
