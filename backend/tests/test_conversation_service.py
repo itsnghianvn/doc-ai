@@ -108,6 +108,30 @@ class ConversationServiceTests(unittest.TestCase):
             [],
         )
 
+    def test_rag_history_is_limited_to_recent_messages(self):
+        conversation = create_conversation(
+            self.db,
+            "document-123",
+        )
+
+        for index in range(12):
+            save_exchange(
+                self.db,
+                conversation["conversation_id"],
+                f"Question {index}",
+                f"Answer {index}",
+                [],
+            )
+
+        history = get_history(
+            self.db,
+            conversation["conversation_id"],
+        )
+
+        self.assertEqual(len(history), 20)
+        self.assertEqual(history[0]["content"], "Question 2")
+        self.assertEqual(history[-1]["content"], "Answer 11")
+
 
 if __name__ == "__main__":
     unittest.main()

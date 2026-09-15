@@ -9,6 +9,8 @@ from app.db.models import (
     utc_now,
 )
 
+HISTORY_MESSAGE_LIMIT = 20
+
 
 def _conversation_to_dict(
     conversation: ConversationModel,
@@ -139,12 +141,25 @@ def get_history(
     db: Session,
     conversation_id: str,
 ) -> list[dict]:
+    messages = list(
+        reversed(
+            db.scalars(
+                select(MessageModel)
+                .where(
+                    MessageModel.conversation_id == conversation_id
+                )
+                .order_by(MessageModel.created_at.desc())
+                .limit(HISTORY_MESSAGE_LIMIT)
+            ).all()
+        )
+    )
+
     return [
         {
-            "role": message["role"],
-            "content": message["content"],
+            "role": message.role,
+            "content": message.content,
         }
-        for message in list_messages(db, conversation_id)
+        for message in messages
     ]
 
 

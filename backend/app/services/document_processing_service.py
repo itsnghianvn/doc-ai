@@ -2,7 +2,10 @@ import logging
 from pathlib import Path
 
 from app.db.database import SessionLocal
-from app.services.document_service import update_document
+from app.services.document_service import (
+    get_document_for_update,
+    update_document,
+)
 from app.services.embedding_service import EmbeddingService
 from app.services.pdf_service import save_pdf
 from app.services.qdrant_service import (
@@ -38,14 +41,18 @@ def process_document(
             document["chunks"]
         )
 
-        create_collection()
-        upsert_chunks(
-            embedded_chunks,
-            document_id=document_id,
-        )
-        vectors_written = True
-
         with SessionLocal() as db:
+            current = get_document_for_update(db, document_id)
+            if not current or current["status"] != "processing":
+                return
+
+            create_collection()
+            upsert_chunks(
+                embedded_chunks,
+                document_id=document_id,
+            )
+            vectors_written = True
+
             update_document(
                 db,
                 document_id,

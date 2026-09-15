@@ -1,20 +1,23 @@
 from datetime import datetime
+from typing import Annotated
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, StringConstraints
 
 from app.schemas.chat import Source
 
 
+ConversationTitle = Annotated[
+    str,
+    StringConstraints(strip_whitespace=True, min_length=1, max_length=120),
+]
+
+
 class ConversationCreate(BaseModel):
-    title: str = Field(
-        default="New conversation",
-        min_length=1,
-        max_length=120,
-    )
+    title: ConversationTitle = "New conversation"
 
 
 class ConversationUpdate(BaseModel):
-    title: str = Field(min_length=1, max_length=120)
+    title: ConversationTitle
 
 
 class Conversation(BaseModel):

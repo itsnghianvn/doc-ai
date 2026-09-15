@@ -1,8 +1,10 @@
 import unittest
+from unittest.mock import Mock, patch
 
 from evaluation.run_evaluation import (
     keyword_coverage,
     lexical_groundedness,
+    request_chat_with_retry,
     retrieval_metrics,
 )
 
@@ -46,6 +48,33 @@ class EvaluationMetricsTests(unittest.TestCase):
         )
 
         self.assertAlmostEqual(score, 0.75)
+
+    @patch("evaluation.run_evaluation.time.sleep")
+    @patch("evaluation.run_evaluation.requests.post")
+    def test_chat_request_retries_rate_limit(
+        self,
+        post,
+        sleep,
+    ):
+        rate_limited = Mock(
+            status_code=429,
+            headers={"Retry-After": "1"},
+        )
+        success = Mock(
+            status_code=200,
+            headers={},
+        )
+        success.json.return_value = {"answer": "ok"}
+        post.side_effect = [rate_limited, success]
+
+        result = request_chat_with_retry(
+            "http://backend",
+            {"question": "test"},
+        )
+
+        self.assertEqual(result, {"answer": "ok"})
+        self.assertEqual(post.call_count, 2)
+        sleep.assert_called_once_with(1)
 
 
 if __name__ == "__main__":

@@ -15,6 +15,7 @@ from app.services.document_processing_service import (
     process_document,
 )
 from app.services.document_service import (
+    delete_document,
     get_document,
     save_document,
 )
@@ -105,6 +106,51 @@ class DocumentProcessingServiceTests(unittest.TestCase):
             document["error_message"],
             "Unreadable PDF",
         )
+
+    @patch(
+        "app.services.document_processing_service.upsert_chunks"
+    )
+    @patch(
+        "app.services.document_processing_service.create_collection"
+    )
+    @patch(
+        "app.services.document_processing_service.EmbeddingService"
+    )
+    @patch(
+        "app.services.document_processing_service.save_pdf"
+    )
+    def test_deleted_document_is_not_indexed(
+        self,
+        save_pdf,
+        embedding_service,
+        create_collection,
+        upsert_chunks,
+    ):
+        chunk = {"content": "Document text."}
+        save_pdf.return_value = {
+            "pages": 1,
+            "characters": 14,
+            "chunk_count": 1,
+            "preview": "Document text.",
+            "chunks": [chunk],
+        }
+
+        def delete_during_embedding(_):
+            with SessionLocal() as db:
+                delete_document(db, "document-123")
+            return [{**chunk, "embedding": [0.1]}]
+
+        embedding_service.return_value.embed_chunks.side_effect = (
+            delete_during_embedding
+        )
+
+        process_document(
+            "document-123",
+            Path("guide.pdf"),
+        )
+
+        create_collection.assert_not_called()
+        upsert_chunks.assert_not_called()
 
 
 if __name__ == "__main__":

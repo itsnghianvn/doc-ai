@@ -9,6 +9,7 @@ from app.services.conversation_service import (
     get_history,
     save_exchange,
 )
+from app.services.document_service import get_document
 from app.services.rag_service import RAGService
 
 
@@ -22,6 +23,25 @@ def chat(
     request: ChatRequest,
     db: Session = Depends(get_db),
 ):
+    document = get_document(db, request.document_id)
+    if not document:
+        raise HTTPException(
+            status_code=404,
+            detail="Document not found.",
+        )
+    if document["status"] != "ready":
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                (
+                    document.get("error_message")
+                    or "Document processing failed."
+                )
+                if document["status"] == "failed"
+                else "Document is still processing."
+            ),
+        )
+
     history = [
         message.model_dump()
         for message in request.history

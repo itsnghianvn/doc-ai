@@ -7,7 +7,7 @@ from app.db.database import get_db
 from app.schemas.document import Document
 from app.services.document_service import (
     delete_document,
-    get_document,
+    get_document_for_update,
     get_documents,
 )
 from app.services.qdrant_service import delete_document_chunks
@@ -28,7 +28,7 @@ def remove_document(
     document_id: str,
     db: Session = Depends(get_db),
 ):
-    document = get_document(db, document_id)
+    document = get_document_for_update(db, document_id)
 
     if document is None:
         raise HTTPException(

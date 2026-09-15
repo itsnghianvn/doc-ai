@@ -74,6 +74,19 @@ def get_document(
     return _to_dict(document) if document else None
 
 
+def get_document_for_update(
+    db: Session,
+    document_id: str,
+) -> dict | None:
+    document = db.scalar(
+        select(DocumentModel)
+        .where(DocumentModel.document_id == document_id)
+        .with_for_update()
+    )
+
+    return _to_dict(document) if document else None
+
+
 def get_document_by_filename(
     db: Session,
     filename: str,
