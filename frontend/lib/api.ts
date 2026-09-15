@@ -7,8 +7,16 @@ import type {
 } from "@/types/conversation";
 import type { Document } from "@/types/document";
 
+const apiBaseUrl = process.env.NEXT_PUBLIC_API_URL;
+
+if (!apiBaseUrl) {
+  throw new Error(
+    "NEXT_PUBLIC_API_URL is required. Configure it in .env.local."
+  );
+}
+
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  baseURL: apiBaseUrl,
 });
 
 export const getApiErrorMessage = (
@@ -23,11 +31,6 @@ export const getApiErrorMessage = (
   }
 
   return fallback;
-};
-
-export const healthCheck = async () => {
-  const response = await api.get("/health");
-  return response.data;
 };
 
 export const uploadDocument = async (

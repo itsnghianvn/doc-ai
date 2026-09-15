@@ -92,6 +92,19 @@ describe("DocAI workspace", () => {
     });
   });
 
+  it("shows a recoverable error when the backend is unavailable", async () => {
+    apiMocks.getDocuments.mockRejectedValueOnce(
+      new Error("connection refused")
+    );
+
+    render(<Home />);
+
+    expect(
+      await screen.findByText("Failed to load documents.")
+    ).toBeInTheDocument();
+    expect(screen.getByText("DocAI")).toBeInTheDocument();
+  });
+
   it("navigates the PDF when a retrieved source is clicked", async () => {
     const user = userEvent.setup();
     render(<Home />);
@@ -126,6 +139,28 @@ describe("DocAI workspace", () => {
         conversation.conversation_id
       );
     });
+  });
+
+  it("removes an optimistic message when chat fails", async () => {
+    apiMocks.chatWithDocument.mockRejectedValueOnce(
+      new Error("provider unavailable")
+    );
+    const user = userEvent.setup();
+    render(<Home />);
+
+    const input = await screen.findByPlaceholderText(
+      "Ask something about your document..."
+    );
+    await user.type(input, "Question that fails{enter}");
+
+    expect(
+      await screen.findByText(
+        "Failed to get an answer. Please try again."
+      )
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText("Question that fails")
+    ).not.toBeInTheDocument();
   });
 
   it("switches the selected document from the document list", async () => {

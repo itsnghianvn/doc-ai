@@ -17,7 +17,10 @@ import {
 } from "react-pdf";
 import "react-pdf/dist/Page/TextLayer.css";
 
-import { applySourceHighlight } from "@/lib/pdf-highlight";
+import {
+  applySourceHighlight,
+  clearSourceHighlight,
+} from "@/lib/pdf-highlight";
 import type { Source } from "@/types/chat";
 import type { Document } from "@/types/document";
 
@@ -104,6 +107,9 @@ export function PdfViewer({
       !source ||
       source.page_start !== currentPage
     ) {
+      if (viewport) {
+        clearSourceHighlight(viewport);
+      }
       return;
     }
 
@@ -142,6 +148,7 @@ export function PdfViewer({
   };
 
   const changeZoom = (nextZoom: number) => {
+    setRenderedTextLayer("");
     setZoom(Math.min(Math.max(nextZoom, 0.7), 2));
   };
 

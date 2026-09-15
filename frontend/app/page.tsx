@@ -469,6 +469,8 @@ export default function Home() {
       return;
     }
 
+    let optimisticMessageAdded = false;
+
     try {
       setChatLoading(true);
       setError("");
@@ -494,6 +496,7 @@ export default function Home() {
           content: userQuestion,
         },
       ]);
+      optimisticMessageAdded = true;
 
       setQuestion("");
 
@@ -532,6 +535,21 @@ export default function Home() {
       }
     } catch (err) {
       console.error("Chat error:", err);
+
+      if (optimisticMessageAdded) {
+        setMessages((current) => {
+          const lastMessage = current[current.length - 1];
+
+          if (
+            lastMessage?.role === "user" &&
+            lastMessage.content === userQuestion
+          ) {
+            return current.slice(0, -1);
+          }
+
+          return current;
+        });
+      }
 
       setError(
         getApiErrorMessage(

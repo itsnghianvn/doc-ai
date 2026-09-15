@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   applySourceHighlight,
+  clearSourceHighlight,
   findMatchingSpanIndexes,
 } from "@/lib/pdf-highlight";
 
@@ -74,6 +75,14 @@ describe("PDF source highlighting", () => {
       left: "20px",
       top: "30px",
     });
+
+    clearSourceHighlight(container);
+    expect(
+      page.querySelectorAll(".docai-source-highlight-overlay")
+    ).toHaveLength(0);
+    expect(spans[0]).not.toHaveClass(
+      "docai-source-highlight"
+    );
   });
 
   it("returns false when PDF text encoding prevents a match", () => {

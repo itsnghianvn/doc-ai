@@ -61,22 +61,29 @@ export const findMatchingSpanIndexes = (
   return [];
 };
 
+export const clearSourceHighlight = (
+  container: HTMLElement,
+): void => {
+  container
+    .querySelectorAll(".docai-source-highlight-overlay")
+    .forEach((overlay) => overlay.remove());
+  container
+    .querySelectorAll(".docai-source-highlight")
+    .forEach((span) =>
+      span.classList.remove("docai-source-highlight")
+    );
+};
+
 export const applySourceHighlight = (
   container: HTMLElement,
   sourceContent: string,
 ): boolean => {
-  container
-    .querySelectorAll(".docai-source-highlight-overlay")
-    .forEach((overlay) => overlay.remove());
+  clearSourceHighlight(container);
 
   const spans = Array.from(
     container.querySelectorAll<HTMLElement>(
       ".react-pdf__Page__textContent span"
     )
-  );
-
-  spans.forEach((span) =>
-    span.classList.remove("docai-source-highlight")
   );
 
   const matchingIndexes = findMatchingSpanIndexes(
