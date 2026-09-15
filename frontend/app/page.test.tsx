@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import Home from "@/app/page";
+import { ThemeProvider } from "@/components/layout/theme-provider";
 
 
 const apiMocks = vi.hoisted(() => ({
@@ -43,7 +44,7 @@ vi.mock("@/components/document/pdf-viewer", () => ({
   ),
 }));
 
-const document = {
+const sampleDocument = {
   document_id: "document-123",
   filename: "guide.pdf",
   pages: 3,
@@ -57,18 +58,28 @@ const document = {
 
 const conversation = {
   conversation_id: "conversation-123",
-  document_id: document.document_id,
+  document_id: sampleDocument.document_id,
   title: "New conversation",
   created_at: "2026-09-14T00:00:00Z",
   updated_at: "2026-09-14T00:00:00Z",
 };
 
+function renderHome() {
+  return render(
+    <ThemeProvider>
+      <Home />
+    </ThemeProvider>
+  );
+}
+
 describe("DocAI workspace", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.localStorage.clear();
+    document.documentElement.classList.remove("dark");
     process.env.NEXT_PUBLIC_API_URL = "http://localhost:8000";
 
-    apiMocks.getDocuments.mockResolvedValue([document]);
+    apiMocks.getDocuments.mockResolvedValue([sampleDocument]);
     apiMocks.getConversations.mockResolvedValue([]);
     apiMocks.getConversationMessages.mockResolvedValue([]);
     apiMocks.createConversation.mockResolvedValue(conversation);
@@ -77,7 +88,7 @@ describe("DocAI workspace", () => {
       sources: [
         {
           chunk_id: "chunk-1",
-          document_id: document.document_id,
+          document_id: sampleDocument.document_id,
           chunk_index: 1,
           score: 0.92,
           retrieval_score: 0.86,
@@ -97,7 +108,7 @@ describe("DocAI workspace", () => {
       new Error("connection refused")
     );
 
-    render(<Home />);
+    renderHome();
 
     expect(
       await screen.findByText("Failed to load documents.")
@@ -105,9 +116,40 @@ describe("DocAI workspace", () => {
     expect(screen.getByText("DocAI")).toBeInTheDocument();
   });
 
+  it("opens the document-ready dashboard by default", async () => {
+    renderHome();
+
+    expect(
+      await screen.findByText("Your document is ready")
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", {
+        name: /What is the main topic of this document/,
+      })
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("pdf-viewer")).not.toBeInTheDocument();
+  });
+
+  it("opens the PDF workspace from View document", async () => {
+    const user = userEvent.setup();
+    renderHome();
+
+    await screen.findByText("Your document is ready");
+    await user.click(
+      screen.getByRole("button", { name: "View document" })
+    );
+
+    expect(screen.getByTestId("pdf-viewer")).toHaveTextContent(
+      "guide.pdf"
+    );
+    expect(
+      screen.queryByText("Your document is ready")
+    ).not.toBeInTheDocument();
+  });
+
   it("navigates the PDF when a retrieved source is clicked", async () => {
     const user = userEvent.setup();
-    render(<Home />);
+    renderHome();
 
     const input = await screen.findByPlaceholderText(
       "Ask something about your document..."
@@ -117,6 +159,7 @@ describe("DocAI workspace", () => {
     expect(
       await screen.findByText("The answer is on page two.")
     ).toBeInTheDocument();
+    expect(screen.queryByTestId("pdf-viewer")).not.toBeInTheDocument();
 
     await user.click(
       screen.getByRole("button", {
@@ -134,7 +177,7 @@ describe("DocAI workspace", () => {
     await waitFor(() => {
       expect(apiMocks.chatWithDocument).toHaveBeenCalledWith(
         "Where is the evidence?",
-        document.document_id,
+        sampleDocument.document_id,
         [],
         conversation.conversation_id
       );
@@ -146,7 +189,7 @@ describe("DocAI workspace", () => {
       new Error("provider unavailable")
     );
     const user = userEvent.setup();
-    render(<Home />);
+    renderHome();
 
     const input = await screen.findByPlaceholderText(
       "Ask something about your document..."
@@ -165,31 +208,63 @@ describe("DocAI workspace", () => {
 
   it("switches the selected document from the document list", async () => {
     const secondDocument = {
-      ...document,
+      ...sampleDocument,
       document_id: "document-456",
       filename: "second.pdf",
     };
     apiMocks.getDocuments.mockResolvedValue([
-      document,
+      sampleDocument,
       secondDocument,
     ]);
     const user = userEvent.setup();
 
-    render(<Home />);
+    renderHome();
 
     await user.click(
       await screen.findByRole("button", {
-        name: /second\.pdf/i,
+        name: /^second\.pdf/,
       })
     );
 
-    await waitFor(() => {
-      expect(screen.getByTestId("pdf-viewer")).toHaveTextContent(
-        "second.pdf"
-      );
-    });
+    expect(
+      await screen.findByRole("heading", { name: "second.pdf" })
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("pdf-viewer")).not.toBeInTheDocument();
     expect(apiMocks.getConversations).toHaveBeenCalledWith(
       secondDocument.document_id
     );
+
+    await user.click(
+      screen.getByRole("button", { name: "View document" })
+    );
+    expect(screen.getByTestId("pdf-viewer")).toHaveTextContent(
+      "second.pdf"
+    );
+  });
+
+  it("persists the selected color theme", async () => {
+    const user = userEvent.setup();
+    renderHome();
+
+    const darkToggle = await screen.findByRole("button", {
+      name: "Use dark theme",
+    });
+    await waitFor(() => expect(darkToggle).toBeEnabled());
+    await user.click(darkToggle);
+
+    expect(document.documentElement.classList.contains("dark")).toBe(
+      true
+    );
+    expect(window.localStorage.getItem("docai-theme")).toBe("dark");
+
+    const lightToggle = screen.getByRole("button", {
+      name: "Use light theme",
+    });
+    await user.click(lightToggle);
+
+    expect(document.documentElement.classList.contains("dark")).toBe(
+      false
+    );
+    expect(window.localStorage.getItem("docai-theme")).toBe("light");
   });
 });
