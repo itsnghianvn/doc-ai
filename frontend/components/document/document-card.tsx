@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, Trash2 } from "lucide-react";
+import { FileText, MoreHorizontal } from "lucide-react";
 
 import type { Document } from "@/types/document";
 
@@ -26,10 +26,10 @@ export function DocumentCard({
 
   return (
     <div
-      className={`group flex items-center gap-3 rounded-xl border p-3 transition ${
+      className={`group flex items-center gap-2.5 rounded-xl border p-2.5 transition ${
         selected
-          ? "border-zinc-300 bg-zinc-100"
-          : "border-transparent hover:border-zinc-200 hover:bg-zinc-50"
+          ? "border-primary/20 bg-sidebar-accent"
+          : "border-transparent hover:border-sidebar-border hover:bg-sidebar-accent/60"
       }`}
     >
       <button
@@ -38,25 +38,23 @@ export function DocumentCard({
         className="flex min-w-0 flex-1 items-center gap-3 text-left"
       >
         <div
-          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
-            selected ? "bg-white" : "bg-zinc-100"
-          }`}
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-card text-primary"
         >
-          <FileText size={17} className="text-zinc-600" />
+          <FileText size={16} />
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-zinc-800">
+          <p className="truncate text-xs font-medium text-sidebar-foreground">
             {document.filename}
           </p>
 
-          <p className="mt-0.5 text-xs text-zinc-500">
+          <p className="mt-0.5 text-[10px] text-muted-foreground">
             {document.pages}{" "}
             {document.pages === 1 ? "page" : "pages"}{" "}
             · {document.chunk_count} chunks
           </p>
 
-          <p className="mt-1 flex items-center gap-1.5 text-[11px] text-zinc-400">
+          <p className="mt-1 flex items-center gap-1.5 text-[10px] text-muted-foreground">
             <span
               className={`h-1.5 w-1.5 rounded-full ${
                 document.status === "processing"
@@ -75,14 +73,15 @@ export function DocumentCard({
         type="button"
         onClick={() => onDelete(document.document_id)}
         disabled={document.status === "processing"}
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-red-50 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-20 md:opacity-0 md:group-hover:opacity-100"
+        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive disabled:cursor-not-allowed disabled:opacity-20"
+        aria-label={`Delete ${document.filename}`}
         title={
           document.status === "processing"
             ? "Wait for processing to finish"
             : "Delete document"
         }
       >
-        <Trash2 size={15} />
+        <MoreHorizontal size={15} />
       </button>
     </div>
   );

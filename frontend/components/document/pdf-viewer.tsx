@@ -153,21 +153,21 @@ export function PdfViewer({
   };
 
   return (
-    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border bg-white shadow-sm">
-      <div className="flex min-h-14 shrink-0 items-center justify-between gap-3 border-b px-3 sm:px-4">
+    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+      <div className="flex min-h-14 shrink-0 items-center justify-between gap-3 border-b border-border px-3 sm:px-4">
         <div className="flex min-w-0 items-center gap-2">
           <FileText
             size={16}
-            className="shrink-0 text-zinc-500"
+            className="shrink-0 text-muted-foreground"
           />
 
           <div className="min-w-0">
-            <h3 className="truncate text-sm font-semibold text-zinc-900">
+            <h3 className="truncate text-sm font-semibold text-foreground">
               {document?.filename ?? "Document"}
             </h3>
 
             {document && (
-              <p className="text-[11px] text-zinc-400">
+              <p className="text-[11px] text-muted-foreground">
                 {totalPages}{" "}
                 {totalPages === 1 ? "page" : "pages"}
               </p>
@@ -181,13 +181,13 @@ export function PdfViewer({
               type="button"
               onClick={() => changePage(currentPage - 1)}
               disabled={currentPage <= 1}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 transition hover:bg-zinc-100 disabled:opacity-30"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-muted disabled:opacity-30"
               aria-label="Previous page"
             >
               <ChevronLeft size={16} />
             </button>
 
-            <label className="flex items-center gap-1 text-xs text-zinc-500">
+            <label className="flex items-center gap-1 text-xs text-muted-foreground">
               <span className="sr-only">Current page</span>
               <input
                 type="number"
@@ -197,7 +197,7 @@ export function PdfViewer({
                 onChange={(event) =>
                   changePage(Number(event.target.value))
                 }
-                className="h-8 w-11 rounded-lg border border-zinc-200 bg-white px-1 text-center text-xs font-medium text-zinc-700 outline-none focus:border-zinc-400"
+                className="h-8 w-11 rounded-lg border border-input bg-background px-1 text-center text-xs font-medium text-foreground outline-none focus:border-primary/50"
               />
               <span>/ {totalPages}</span>
             </label>
@@ -206,19 +206,19 @@ export function PdfViewer({
               type="button"
               onClick={() => changePage(currentPage + 1)}
               disabled={currentPage >= totalPages}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 transition hover:bg-zinc-100 disabled:opacity-30"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-muted disabled:opacity-30"
               aria-label="Next page"
             >
               <ChevronRight size={16} />
             </button>
 
-            <div className="mx-1 h-5 w-px bg-zinc-200" />
+            <div className="mx-1 h-5 w-px bg-border" />
 
             <button
               type="button"
               onClick={() => changeZoom(zoom - 0.15)}
               disabled={zoom <= 0.7}
-              className="hidden h-8 w-8 items-center justify-center rounded-lg text-zinc-500 transition hover:bg-zinc-100 disabled:opacity-30 sm:flex"
+              className="hidden h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-muted disabled:opacity-30 sm:flex"
               aria-label="Zoom out"
             >
               <ZoomOut size={15} />
@@ -228,7 +228,7 @@ export function PdfViewer({
               type="button"
               onClick={() => changeZoom(zoom + 0.15)}
               disabled={zoom >= 2}
-              className="hidden h-8 w-8 items-center justify-center rounded-lg text-zinc-500 transition hover:bg-zinc-100 disabled:opacity-30 sm:flex"
+              className="hidden h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-muted disabled:opacity-30 sm:flex"
               aria-label="Zoom in"
             >
               <ZoomIn size={15} />
@@ -238,7 +238,7 @@ export function PdfViewer({
               href={`${pdfUrl}#page=${currentPage}`}
               target="_blank"
               rel="noreferrer"
-              className="ml-1 flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 transition hover:bg-zinc-100"
+              className="ml-1 flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-muted"
               aria-label="Open PDF in a new tab"
               title="Open in new tab"
             >
@@ -250,7 +250,7 @@ export function PdfViewer({
 
       <div
         ref={viewportRef}
-        className="relative min-h-0 flex-1 overflow-auto bg-zinc-100"
+        className="relative min-h-0 flex-1 overflow-auto bg-muted"
       >
         {source && source.page_start === currentPage && (
           <div
@@ -258,8 +258,8 @@ export function PdfViewer({
               highlightState === "found"
                 ? "border-amber-200 bg-amber-50 text-amber-800"
                 : highlightState === "missing"
-                  ? "border-zinc-200 bg-white text-zinc-500"
-                  : "border-zinc-200 bg-white text-zinc-500"
+                  ? "border-border bg-card text-muted-foreground"
+                  : "border-border bg-card text-muted-foreground"
             }`}
           >
             {highlightState === "searching" && (
@@ -329,17 +329,17 @@ function ViewerMessage({
   return (
     <div className="flex min-h-64 items-center justify-center px-6 text-center">
       <div>
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-white">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-card">
           {loading ? (
             <Loader2
               size={20}
-              className="animate-spin text-zinc-400"
+              className="animate-spin text-muted-foreground"
             />
           ) : (
-            <FileText size={22} className="text-zinc-300" />
+            <FileText size={22} className="text-muted-foreground/50" />
           )}
         </div>
-        <p className="mt-3 text-xs text-zinc-500">
+        <p className="mt-3 text-xs text-muted-foreground">
           {message}
         </p>
       </div>

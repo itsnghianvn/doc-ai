@@ -32,33 +32,33 @@ export function SourceCard({
           ? `Open source on ${pageLabel.toLowerCase()}`
           : "Source page unavailable"
       }
-      className="group w-full rounded-lg border border-zinc-200 bg-white p-3 text-left transition hover:border-zinc-300 hover:bg-zinc-50 focus:outline-none focus:ring-2 focus:ring-zinc-200 disabled:cursor-default disabled:bg-zinc-50/50"
+      className="group w-full rounded-lg border border-border bg-card p-3 text-left transition hover:border-primary/30 hover:bg-accent focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:cursor-default disabled:bg-muted/50"
     >
       <div className="flex items-center justify-between gap-3">
-        <span className="truncate text-xs font-medium text-zinc-700">
+        <span className="truncate text-xs font-medium text-foreground">
           {pageLabel}
         </span>
 
         <div className="flex shrink-0 items-center gap-2">
-          <span className="text-[11px] text-zinc-400">
+          <span className="text-[11px] text-muted-foreground">
             {relevance}% relevant
           </span>
 
           {source.page_start && (
             <ArrowUpRight
               size={13}
-              className="text-zinc-400 transition group-hover:text-zinc-700"
+              className="text-muted-foreground transition group-hover:text-primary"
             />
           )}
         </div>
       </div>
 
-      <p className="mt-2 line-clamp-3 text-xs leading-5 text-zinc-500">
+      <p className="mt-2 line-clamp-3 text-xs leading-5 text-muted-foreground">
         {source.content}
       </p>
 
       {!source.page_start && (
-        <p className="mt-1.5 text-[11px] text-zinc-400">
+        <p className="mt-1.5 text-[11px] text-muted-foreground">
           Page unavailable
         </p>
       )}

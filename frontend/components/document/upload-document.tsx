@@ -20,18 +20,18 @@ export function UploadDocument({
   }
 
   return (
-    <div className="fixed bottom-5 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-xl border bg-white p-4 shadow-xl">
+    <div className="fixed bottom-5 left-1/2 z-50 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-xl border border-border bg-card p-4 shadow-xl">
       <div className="flex items-center gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zinc-100">
-          <FileText size={17} className="text-zinc-600" />
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <FileText size={17} />
         </div>
 
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-medium text-zinc-900">
+          <p className="truncate text-sm font-medium text-foreground">
             {file.name}
           </p>
 
-          <p className="mt-0.5 text-xs text-zinc-500">
+          <p className="mt-0.5 text-xs text-muted-foreground">
             {(file.size / 1024 / 1024).toFixed(1)} MB
             {" · "}
             {loading ? "Processing..." : "Ready to upload"}
@@ -42,7 +42,7 @@ export function UploadDocument({
           type="button"
           onClick={onUpload}
           disabled={loading}
-          className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-black px-3 text-xs font-medium text-white transition hover:bg-zinc-800 disabled:pointer-events-none disabled:opacity-60"
+          className="inline-flex h-9 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-xs font-medium text-primary-foreground transition hover:brightness-110 disabled:pointer-events-none disabled:opacity-60"
         >
           {loading && (
             <Loader2 size={14} className="animate-spin" />
@@ -55,7 +55,7 @@ export function UploadDocument({
         type="button"
         onClick={onCancel}
         disabled={loading}
-        className="mt-2 text-xs text-zinc-400 transition hover:text-zinc-700 disabled:opacity-50"
+        className="mt-2 text-xs text-muted-foreground transition hover:text-foreground disabled:opacity-50"
       >
         Cancel
       </button>

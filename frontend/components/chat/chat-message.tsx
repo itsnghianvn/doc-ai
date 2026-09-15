@@ -26,7 +26,7 @@ export function ChatMessage({
       }`}
     >
       {!isUser && (
-        <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black text-white">
+        <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
           <Bot size={16} />
         </div>
       )}
@@ -42,14 +42,14 @@ export function ChatMessage({
         <div
           className={`mb-1.5 flex items-center gap-2 text-xs font-medium ${
             isUser
-              ? "justify-end text-zinc-500"
-              : "text-zinc-500"
+              ? "justify-end text-muted-foreground"
+              : "text-muted-foreground"
           }`}
         >
           {isUser && <span>You</span>}
           {isUser && (
-            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-200">
-              <User size={13} className="text-zinc-600" />
+            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted">
+              <User size={13} className="text-muted-foreground" />
             </div>
           )}
           {!isUser && <span>DocAI</span>}
@@ -59,13 +59,13 @@ export function ChatMessage({
         <div
           className={
             isUser
-              ? "rounded-2xl bg-black px-4 py-3 text-white"
-              : "py-1 text-zinc-900"
+              ? "rounded-2xl bg-primary px-4 py-3 text-primary-foreground"
+              : "py-1 text-foreground"
           }
         >
           <div
             className={`text-sm leading-6 ${
-              isUser ? "text-white" : "text-zinc-800"
+              isUser ? "text-primary-foreground" : "text-foreground"
             }`}
           >
             <ReactMarkdown
@@ -100,8 +100,8 @@ export function ChatMessage({
                   <code
                     className={`rounded px-1.5 py-0.5 text-xs ${
                       isUser
-                        ? "bg-zinc-800 text-zinc-100"
-                        : "bg-zinc-100 text-zinc-800"
+                        ? "bg-primary-foreground/15 text-primary-foreground"
+                        : "bg-muted text-foreground"
                     }`}
                   >
                     {children}
@@ -109,7 +109,7 @@ export function ChatMessage({
                 ),
 
                 pre: ({ children }) => (
-                  <pre className="mb-3 overflow-x-auto rounded-lg bg-zinc-900 p-3 text-xs text-zinc-100 last:mb-0">
+                  <pre className="mb-3 overflow-x-auto rounded-lg bg-foreground p-3 text-xs text-background last:mb-0">
                     {children}
                   </pre>
                 ),
@@ -133,7 +133,7 @@ export function ChatMessage({
                 ),
 
                 blockquote: ({ children }) => (
-                  <blockquote className="mb-3 border-l-2 border-zinc-300 pl-3 text-zinc-600">
+                  <blockquote className="mb-3 border-l-2 border-border pl-3 text-muted-foreground">
                     {children}
                   </blockquote>
                 ),
@@ -143,7 +143,7 @@ export function ChatMessage({
                     href={href}
                     target="_blank"
                     rel="noreferrer"
-                    className="underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-600"
+                    className="underline decoration-border underline-offset-2 hover:decoration-foreground"
                   >
                     {children}
                   </a>
@@ -158,13 +158,13 @@ export function ChatMessage({
           {!isUser &&
             sources &&
             sources.length > 0 && (
-              <div className="mt-4 border-t border-zinc-200 pt-3">
+              <div className="mt-4 border-t border-border pt-3">
                 <div className="mb-2 flex items-center justify-between">
-                  <p className="text-xs font-semibold text-zinc-700">
+                  <p className="text-xs font-semibold text-foreground">
                     Sources
                   </p>
 
-                  <span className="text-xs text-zinc-400">
+                  <span className="text-xs text-muted-foreground">
                     {sources.length}{" "}
                     {sources.length === 1
                       ? "source"

@@ -21,12 +21,12 @@ export function DocumentList({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex items-center justify-between px-2">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
-          Documents
+        <p className="text-[11px] font-semibold text-sidebar-foreground">
+          My Documents
         </p>
 
         {documents.length > 0 && (
-          <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-[11px] font-medium text-zinc-500">
+          <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
             {documents.length}
           </span>
         )}
@@ -35,23 +35,23 @@ export function DocumentList({
       <div className="mt-3 min-h-0 flex-1 overflow-y-auto">
         {documents.length === 0 ? (
           <div className="flex flex-col items-center justify-center px-4 py-10 text-center">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-100">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-muted">
               <FileText
                 size={18}
-                className="text-zinc-400"
+                className="text-muted-foreground"
               />
             </div>
 
-            <p className="mt-3 text-sm font-medium text-zinc-700">
+            <p className="mt-3 text-sm font-medium text-foreground">
               No documents
             </p>
 
-            <p className="mt-1 text-xs leading-5 text-zinc-400">
+            <p className="mt-1 text-xs leading-5 text-muted-foreground">
               Upload a PDF to get started.
             </p>
           </div>
         ) : (
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             {documents.map((document) => (
               <DocumentCard
                 key={document.document_id}

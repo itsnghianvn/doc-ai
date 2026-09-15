@@ -38,13 +38,13 @@ export function ChatInput({
           placeholder="Ask something about your document..."
           disabled={loading}
           rows={1}
-          className="min-h-11 max-h-32 flex-1 resize-none rounded-xl border border-zinc-200 px-3.5 py-3 text-sm text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-2 focus:ring-zinc-100 disabled:bg-zinc-50"
+          className="min-h-11 max-h-32 flex-1 resize-none rounded-xl border border-input bg-background px-3.5 py-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary/50 focus:ring-2 focus:ring-primary/10 disabled:bg-muted"
         />
 
         <button
           type="submit"
           disabled={!value.trim() || loading}
-          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-black text-white transition hover:bg-zinc-800 disabled:pointer-events-none disabled:opacity-40"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground transition hover:brightness-110 disabled:pointer-events-none disabled:opacity-40"
           aria-label="Send message"
         >
           {loading ? (
@@ -55,7 +55,7 @@ export function ChatInput({
         </button>
       </div>
 
-      <p className="mt-2 text-[11px] text-zinc-400">
+      <p className="mt-2 text-[11px] text-muted-foreground">
         Press Enter to send · Shift + Enter for a new line
       </p>
     </form>

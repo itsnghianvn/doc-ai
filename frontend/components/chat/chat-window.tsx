@@ -59,21 +59,20 @@ export function ChatWindow({
   ];
 
   return (
-    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
-      {/* Header */}
-      <div className="border-b border-zinc-200 px-4 py-3 sm:px-5">
+    <section className="flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+      <div className="border-b border-border px-4 py-3 sm:px-5">
         <div className="flex min-h-8 items-center justify-between gap-3">
           <div className="flex min-w-0 items-center gap-3">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-black text-white">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               <Bot size={16} />
             </div>
 
             <div className="min-w-0">
-              <h2 className="truncate text-sm font-semibold text-zinc-900">
+              <h2 className="truncate text-sm font-semibold text-foreground">
                 Chat with your document
               </h2>
 
-              <p className="mt-0.5 hidden text-xs text-zinc-500 sm:block">
+              <p className="mt-0.5 hidden text-xs text-muted-foreground sm:block">
                 Answers are grounded in the selected PDF.
               </p>
             </div>
@@ -83,7 +82,7 @@ export function ChatWindow({
             type="button"
             onClick={onNewConversation}
             disabled={chatLoading}
-            className="flex shrink-0 items-center gap-1.5 rounded-lg border border-zinc-200 px-2.5 py-1.5 text-xs font-medium text-zinc-600 transition hover:bg-zinc-50 hover:text-zinc-900 disabled:cursor-not-allowed disabled:opacity-40"
+            className="flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-2.5 py-1.5 text-xs font-medium text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
             title="Start a new conversation"
           >
             <MessageSquarePlus size={14} />
@@ -101,7 +100,7 @@ export function ChatWindow({
                 onConversationChange(event.target.value)
               }
               disabled={chatLoading}
-              className="min-w-0 flex-1 truncate rounded-lg border border-zinc-200 bg-white px-2.5 py-1.5 text-xs text-zinc-600 outline-none focus:border-zinc-400"
+              className="min-w-0 flex-1 truncate rounded-lg border border-input bg-background px-2.5 py-1.5 text-xs text-muted-foreground outline-none focus:border-primary/50"
               aria-label="Select conversation"
             >
               {conversations.map((conversation) => (
@@ -118,7 +117,7 @@ export function ChatWindow({
               type="button"
               onClick={onRenameConversation}
               disabled={!selectedConversation || chatLoading}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700 disabled:opacity-30"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-muted hover:text-foreground disabled:opacity-30"
               aria-label="Rename conversation"
             >
               <Pencil size={13} />
@@ -128,7 +127,7 @@ export function ChatWindow({
               type="button"
               onClick={onDeleteConversation}
               disabled={!selectedConversation || chatLoading}
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-30"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive disabled:opacity-30"
               aria-label="Delete conversation"
             >
               <Trash2 size={13} />
@@ -137,31 +136,28 @@ export function ChatWindow({
         )}
       </div>
 
-      {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-6">
-        {/* Empty state */}
         {messages.length === 0 && !chatLoading && (
           <div className="flex h-full min-h-[320px] flex-col items-center justify-center px-4 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-100">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-muted">
               <FileText
                 size={22}
-                className="text-zinc-500"
+                className="text-muted-foreground"
               />
             </div>
 
-            <h3 className="mt-5 text-base font-semibold text-zinc-900">
+            <h3 className="mt-5 text-base font-semibold text-foreground">
               Start a conversation
             </h3>
 
-            <p className="mt-2 max-w-md text-sm leading-6 text-zinc-500">
+            <p className="mt-2 max-w-md text-sm leading-6 text-muted-foreground">
               Ask questions about your document and
               DocAI will find the most relevant information
               for you.
             </p>
 
-            {/* Suggested questions */}
             <div className="mt-6 w-full max-w-xl">
-              <div className="mb-2 flex items-center justify-center gap-1.5 text-xs font-medium text-zinc-500">
+              <div className="mb-2 flex items-center justify-center gap-1.5 text-xs font-medium text-muted-foreground">
                 <Sparkles size={13} />
                 Try asking
               </div>
@@ -172,7 +168,7 @@ export function ChatWindow({
                     key={suggestion}
                     type="button"
                     onClick={() => onSuggestionClick(suggestion)}
-                    className="rounded-full border border-zinc-200 bg-white px-3.5 py-2 text-xs font-medium text-zinc-600 transition hover:border-zinc-300 hover:bg-zinc-50 hover:text-zinc-900"
+                    className="rounded-full border border-border bg-card px-3.5 py-2 text-xs font-medium text-muted-foreground transition hover:border-primary/30 hover:bg-accent hover:text-foreground"
                   >
                     {suggestion}
                   </button>
@@ -183,7 +179,6 @@ export function ChatWindow({
         )}
 
         <div className="space-y-6">
-          {/* Chat messages */}
           {messages.map((message, index) => (
             <ChatMessage
               key={index}
@@ -194,15 +189,14 @@ export function ChatWindow({
             />
           ))}
 
-          {/* Loading */}
           {chatLoading && (
             <div className="flex items-start gap-3">
-              <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black text-white">
+              <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground">
                 <Bot size={16} />
               </div>
 
-              <div className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 shadow-sm">
-                <div className="flex items-center gap-2 text-sm text-zinc-500">
+              <div className="rounded-2xl border border-border bg-card px-4 py-3 shadow-sm">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Loader2
                     size={15}
                     className="animate-spin"
@@ -214,13 +208,11 @@ export function ChatWindow({
             </div>
           )}
 
-          {/* Scroll anchor */}
           <div ref={messagesEndRef} />
         </div>
       </div>
 
-      {/* Input */}
-      <div className="border-t border-zinc-200 bg-white p-3 sm:p-4">
+      <div className="border-t border-border bg-card p-3 sm:p-4">
         <ChatInput
           value={question}
           onChange={onQuestionChange}
@@ -229,7 +221,7 @@ export function ChatWindow({
           onKeyDown={onKeyDown}
         />
 
-        <p className="mt-2 text-center text-[11px] text-zinc-400">
+        <p className="mt-2 text-center text-[11px] text-muted-foreground">
           DocAI answers based on the selected document.
         </p>
       </div>

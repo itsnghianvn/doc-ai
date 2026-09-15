@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import {
   FileText,
-  Loader2,
+  LayoutDashboard,
   MessageSquareText,
   Upload,
   X,
@@ -24,14 +24,20 @@ import {
 } from "@/lib/api";
 
 import { ChatWindow } from "@/components/chat/chat-window";
+import { DocumentDetailsPanel } from "@/components/dashboard/document-details-panel";
+import { DocumentReadyDashboard } from "@/components/dashboard/document-ready-dashboard";
 import { UploadDocument } from "@/components/document/upload-document";
+import { AppHeader } from "@/components/layout/app-header";
+import { AppShell } from "@/components/layout/app-shell";
 import { Sidebar } from "@/components/layout/sidebar";
+import { cn } from "@/lib/utils";
 
 import type { Message, Source } from "@/types/chat";
 import type { Conversation } from "@/types/conversation";
 import type { Document } from "@/types/document";
 
 type MobilePane = "document" | "chat";
+type AppView = "dashboard" | "workspace";
 const MAX_PDF_SIZE_BYTES = 20 * 1024 * 1024;
 const PdfViewer = dynamic(
   () =>
@@ -66,6 +72,11 @@ export default function Home() {
     useState<Source | null>(null);
   const [mobilePane, setMobilePane] =
     useState<MobilePane>("document");
+  const [appView, setAppView] =
+    useState<AppView>("dashboard");
+  const [documentSearch, setDocumentSearch] = useState("");
+  const [dashboardChatOpen, setDashboardChatOpen] =
+    useState(false);
 
   const [error, setError] = useState("");
 
@@ -339,6 +350,8 @@ export default function Home() {
       setPdfPage(null);
       setActiveSource(null);
       setMobilePane("document");
+      setAppView("dashboard");
+      setDashboardChatOpen(false);
       setConversations([]);
       setSelectedConversation(null);
 
@@ -369,6 +382,8 @@ export default function Home() {
     setPdfPage(null);
     setActiveSource(null);
     setMobilePane("document");
+    setAppView("dashboard");
+    setDashboardChatOpen(false);
     setConversations([]);
     setSelectedConversation(null);
 
@@ -422,6 +437,8 @@ export default function Home() {
 
         setMessages([]);
         setQuestion("");
+        setAppView("dashboard");
+        setDashboardChatOpen(false);
       }
     } catch (err) {
       console.error("Delete error:", err);
@@ -472,6 +489,7 @@ export default function Home() {
     let optimisticMessageAdded = false;
 
     try {
+      setDashboardChatOpen(true);
       setChatLoading(true);
       setError("");
 
@@ -585,6 +603,7 @@ export default function Home() {
       setMessages([]);
       setQuestion("");
       setError("");
+      setDashboardChatOpen(true);
     } catch (err) {
       setError(
         getApiErrorMessage(
@@ -619,6 +638,7 @@ export default function Home() {
       );
       setQuestion("");
       setError("");
+      setDashboardChatOpen(true);
     } catch (err) {
       setError(
         getApiErrorMessage(
@@ -741,17 +761,29 @@ export default function Home() {
     setPdfPage(source.page_start);
     setActiveSource(source);
     setMobilePane("document");
+    setAppView("workspace");
   };
 
+  const openWorkspace = (pane: MobilePane) => {
+    setAppView("workspace");
+    setMobilePane(pane);
+  };
+
+  const mobileTabClass = (active: boolean) =>
+    cn(
+      "flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition",
+      active
+        ? "bg-primary text-primary-foreground"
+        : "text-muted-foreground"
+    );
+
   return (
-    <div
-      className="flex h-dvh overflow-hidden bg-zinc-50"
+    <AppShell
       onDragEnter={handleDragEnter}
       onDragOver={(event) => event.preventDefault()}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      {/* Hidden file input */}
       <input
         ref={fileInputRef}
         type="file"
@@ -760,237 +792,214 @@ export default function Home() {
         className="hidden"
       />
 
-      {/* Sidebar */}
       <Sidebar
         documents={documents}
         selectedDocument={selectedDocument}
         onSelectDocument={handleSelectDocument}
         onDeleteDocument={handleDeleteDocument}
         onUploadClick={handleUploadClick}
+        search={documentSearch}
+        onSearchChange={setDocumentSearch}
+        onOpenDashboard={() => setAppView("dashboard")}
       />
 
-      {/* Main workspace */}
-      <main className="min-w-0 flex-1 overflow-hidden">
-        {/* Top bar */}
-        <header className="flex h-16 items-center justify-between gap-3 border-b bg-white px-3 sm:px-4 md:px-6">
-          <div className="hidden min-w-0 md:block">
-            {selectedDocument ? (
-              <>
-                <h2 className="truncate text-sm font-semibold text-zinc-900">
-                  {selectedDocument.filename}
-                </h2>
+      <div className="flex min-w-0 flex-1">
+        <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
+          <AppHeader
+            documents={documents}
+            selectedDocument={selectedDocument}
+            search={documentSearch}
+            loading={loading}
+            hasProcessingDocuments={hasProcessingDocuments}
+            workspaceVisible={appView === "workspace"}
+            onSearchChange={setDocumentSearch}
+            onSelectDocument={handleSelectDocument}
+            onUploadClick={handleUploadClick}
+            onOpenDashboard={() => setAppView("dashboard")}
+          />
 
-                <p className="mt-0.5 text-xs text-zinc-500">
-                  {selectedDocument.pages}{" "}
-                  {selectedDocument.pages === 1
-                    ? "page"
-                    : "pages"}{" "}
-                  ·{" "}
-                  {selectedDocument.chunk_count}{" "}
-                  chunks
-                </p>
-              </>
-            ) : (
-              <>
-                <h2 className="text-sm font-semibold text-zinc-900">
-                  Document workspace
-                </h2>
-
-                <p className="mt-0.5 text-xs text-zinc-500">
-                  Upload a PDF to get started
-                </p>
-              </>
-            )}
-          </div>
-
-          <select
-            value={selectedDocument?.document_id ?? ""}
-            onChange={(event) => {
-              const document = documents.find(
-                (item) =>
-                  item.document_id === event.target.value
-              );
-
-              if (document) {
-                handleSelectDocument(document);
-              }
-            }}
-            className="min-w-0 flex-1 truncate rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 outline-none md:hidden"
-            aria-label="Select document"
-          >
-            {documents.length === 0 && (
-              <option value="">No documents</option>
-            )}
-            {documents.map((document) => (
-              <option
-                key={document.document_id}
-                value={document.document_id}
-              >
-                {document.filename}
-              </option>
-            ))}
-          </select>
-
-          <div className="flex shrink-0 items-center gap-2">
-            {(loading || hasProcessingDocuments) && (
-              <div className="flex items-center gap-2 rounded-lg bg-zinc-100 px-2.5 py-2 text-xs text-zinc-600">
-                <Loader2
-                  size={14}
-                  className="animate-spin"
-                />
-                <span className="hidden sm:inline">
-                  Processing document...
-                </span>
-              </div>
-            )}
-
+          <div className="grid grid-cols-3 border-b border-border bg-card p-1.5 md:hidden">
             <button
               type="button"
-              onClick={handleUploadClick}
-              disabled={loading}
-              className="flex h-9 w-9 items-center justify-center rounded-lg bg-black text-white disabled:opacity-50 md:hidden"
-              aria-label="Upload PDF"
+              onClick={() => setAppView("dashboard")}
+              className={mobileTabClass(appView === "dashboard")}
             >
-              <Upload size={16} />
+              <LayoutDashboard size={14} />
+              Dashboard
             </button>
-          </div>
-        </header>
-
-        {/* Workspace */}
-        <div className="flex h-[calc(100dvh-4rem)] min-h-0 flex-col p-3 md:p-5">
-          <div className="mb-3 grid grid-cols-2 rounded-lg bg-zinc-200/70 p-1 md:hidden">
             <button
               type="button"
-              onClick={() => setMobilePane("document")}
-              className={`flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition ${
-                mobilePane === "document"
-                  ? "bg-white text-zinc-900"
-                  : "text-zinc-500"
-              }`}
+              onClick={() => openWorkspace("document")}
+              className={mobileTabClass(
+                appView === "workspace" && mobilePane === "document"
+              )}
             >
               <FileText size={14} />
               Document
             </button>
-
             <button
               type="button"
-              onClick={() => setMobilePane("chat")}
-              className={`flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-medium transition ${
-                mobilePane === "chat"
-                  ? "bg-white text-zinc-900"
-                  : "text-zinc-500"
-              }`}
+              onClick={() => openWorkspace("chat")}
+              className={mobileTabClass(
+                appView === "workspace" && mobilePane === "chat"
+              )}
             >
               <MessageSquareText size={14} />
               Chat
             </button>
           </div>
 
-          <div className="grid min-h-0 flex-1 gap-5 md:grid-cols-2">
-            {/* PDF Viewer */}
-            <div
-              className={`min-h-0 ${
-                mobilePane === "document"
-                  ? "flex"
-                  : "hidden"
-              } md:flex`}
-            >
-              <div className="min-h-0 min-w-0 flex-1">
-                <PdfViewer
-                  key={
-                    selectedDocument?.document_id ??
-                    "no-document"
-                  }
+          <div className="min-h-0 flex-1">
+            {appView === "dashboard" ? (
+              dashboardChatOpen ? (
+                <div className="h-full p-3 md:p-5">
+                  <ChatWindow
+                    messages={messages}
+                    question={question}
+                    chatLoading={chatLoading}
+                    conversations={conversations}
+                    selectedConversation={selectedConversation}
+                    messagesEndRef={messagesEndRef}
+                    onQuestionChange={setQuestion}
+                    onChat={() => handleChat()}
+                    onNewConversation={handleNewConversation}
+                    onConversationChange={handleConversationChange}
+                    onRenameConversation={handleRenameConversation}
+                    onDeleteConversation={handleDeleteConversation}
+                    onSuggestionClick={handleChat}
+                    onKeyDown={handleKeyDown}
+                    onSourceClick={handleSourceClick}
+                  />
+                </div>
+              ) : (
+                <DocumentReadyDashboard
                   document={selectedDocument}
-                  page={pdfPage}
-                  source={activeSource}
-                  onPageChange={(page) => {
-                    setPdfPage(page);
-                    setActiveSource(null);
-                  }}
+                  question={question}
+                  chatLoading={chatLoading}
+                  onQuestionChange={setQuestion}
+                  onChat={() => handleChat()}
+                  onSuggestionClick={handleChat}
+                  onKeyDown={handleKeyDown}
+                  onUploadClick={handleUploadClick}
                 />
+              )
+            ) : (
+              <div className="grid h-full min-h-0 gap-4 p-3 md:grid-cols-2 md:p-5">
+                <div
+                  className={cn(
+                    "min-h-0",
+                    mobilePane === "document" ? "flex" : "hidden",
+                    "md:flex"
+                  )}
+                >
+                  <div className="min-h-0 min-w-0 flex-1">
+                    <PdfViewer
+                      key={
+                        selectedDocument?.document_id ??
+                        "no-document"
+                      }
+                      document={selectedDocument}
+                      page={pdfPage}
+                      source={activeSource}
+                      onPageChange={(page) => {
+                        setPdfPage(page);
+                        setActiveSource(null);
+                      }}
+                    />
+                  </div>
+                </div>
+                <div
+                  className={cn(
+                    "min-h-0",
+                    mobilePane === "chat" ? "block" : "hidden",
+                    "md:block",
+                    (!selectedDocument ||
+                      selectedDocument.status !== "ready") &&
+                      "pointer-events-none opacity-50"
+                  )}
+                >
+                  <ChatWindow
+                    messages={messages}
+                    question={question}
+                    chatLoading={chatLoading}
+                    conversations={conversations}
+                    selectedConversation={selectedConversation}
+                    messagesEndRef={messagesEndRef}
+                    onQuestionChange={setQuestion}
+                    onChat={() => handleChat()}
+                    onNewConversation={handleNewConversation}
+                    onConversationChange={handleConversationChange}
+                    onRenameConversation={handleRenameConversation}
+                    onDeleteConversation={handleDeleteConversation}
+                    onSuggestionClick={handleChat}
+                    onKeyDown={handleKeyDown}
+                    onSourceClick={handleSourceClick}
+                  />
+                </div>
               </div>
-            </div>
-
-            {/* Chat */}
-            <div
-              className={`min-h-0 ${
-                mobilePane === "chat"
-                  ? "block"
-                  : "hidden"
-              } md:block ${
-                !selectedDocument ||
-                selectedDocument.status !== "ready"
-                  ? "pointer-events-none opacity-50"
-                  : ""
-              }`}
-            >
-              <ChatWindow
-                messages={messages}
-                question={question}
-                chatLoading={chatLoading}
-                conversations={conversations}
-                selectedConversation={selectedConversation}
-                messagesEndRef={messagesEndRef}
-                onQuestionChange={setQuestion}
-                onChat={() => handleChat()}
-                onNewConversation={handleNewConversation}
-                onConversationChange={handleConversationChange}
-                onRenameConversation={handleRenameConversation}
-                onDeleteConversation={handleDeleteConversation}
-                onSuggestionClick={handleChat}
-                onKeyDown={handleKeyDown}
-                onSourceClick={handleSourceClick}
-              />
-            </div>
+            )}
           </div>
-        </div>
+        </main>
 
-        <UploadDocument
-          file={file}
-          loading={loading}
-          onUpload={handleUpload}
-          onCancel={() => setFile(null)}
-        />
-
-        {/* Error */}
-        {error && (
-          <div
-            role="alert"
-            className="fixed right-4 top-4 z-[60] flex w-[calc(100%-2rem)] max-w-sm items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 shadow-lg"
-          >
-            <p className="min-w-0 flex-1 text-sm text-red-600">
-              {error}
-            </p>
-
-            <button
-              type="button"
-              onClick={() => setError("")}
-              className="shrink-0 rounded p-0.5 text-red-400 transition hover:bg-red-100 hover:text-red-700"
-              aria-label="Dismiss error"
-            >
-              <X size={15} />
-            </button>
-          </div>
+        {appView === "dashboard" && (
+          <DocumentDetailsPanel
+            document={selectedDocument}
+            conversations={conversations}
+            onNewConversation={handleNewConversation}
+            onViewDocument={() => {
+              setAppView("workspace");
+              setMobilePane("document");
+            }}
+            onDeleteDocument={handleDeleteDocument}
+            onSelectConversation={(conversation) =>
+              handleConversationChange(
+                conversation.conversation_id
+              )
+            }
+          />
         )}
-      </main>
+      </div>
+
+      <UploadDocument
+        file={file}
+        loading={loading}
+        onUpload={handleUpload}
+        onCancel={() => setFile(null)}
+      />
+
+      {error && (
+        <div
+          role="alert"
+          className="fixed right-4 top-4 z-[60] flex w-[calc(100%-2rem)] max-w-sm items-start gap-3 rounded-xl border border-destructive/20 bg-card px-4 py-3 shadow-lg"
+        >
+          <p className="min-w-0 flex-1 text-sm text-destructive">
+            {error}
+          </p>
+
+          <button
+            type="button"
+            onClick={() => setError("")}
+            className="shrink-0 rounded p-0.5 text-destructive/70 transition hover:bg-destructive/10 hover:text-destructive"
+            aria-label="Dismiss error"
+          >
+            <X size={15} />
+          </button>
+        </div>
+      )}
 
       {dragActive && !loading && (
-        <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center bg-black/20 p-6">
-          <div className="rounded-2xl border-2 border-dashed border-zinc-400 bg-white px-10 py-8 text-center">
-            <Upload
-              size={24}
-              className="mx-auto text-zinc-600"
-            />
-            <p className="mt-3 text-sm font-semibold text-zinc-800">
+        <div className="pointer-events-none fixed inset-0 z-40 flex items-center justify-center bg-foreground/20 p-6 backdrop-blur-sm">
+          <div className="rounded-2xl border-2 border-dashed border-primary/50 bg-card px-10 py-8 text-center shadow-xl">
+            <Upload size={24} className="mx-auto text-primary" />
+            <p className="mt-3 text-sm font-semibold">
               Drop your PDF here
             </p>
-            <p className="mt-1 text-xs text-zinc-500">
+            <p className="mt-1 text-xs text-muted-foreground">
               Maximum file size: 20 MB
             </p>
           </div>
         </div>
       )}
-    </div>
+    </AppShell>
   );
 }
