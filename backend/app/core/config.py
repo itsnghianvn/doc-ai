@@ -37,7 +37,8 @@ class Settings(BaseSettings):
     QDRANT_COLLECTION_NAME: str = "documents"
     EMBEDDING_DIMENSION: int = Field(default=3072, ge=1)
     CORS_ORIGINS: str = (
-        "http://localhost:3000,http://127.0.0.1:3000"
+        "http://localhost:3000,http://127.0.0.1:3000,"
+        "http://localhost:3001,http://127.0.0.1:3001"
     )
 
     @property

@@ -49,7 +49,7 @@ class ChatApiTests(unittest.TestCase):
         response = self.client.post(
             "/chat",
             json=self.request,
-            headers={"Origin": "http://localhost:3000"},
+            headers={"Origin": "http://localhost:3001"},
         )
 
         self.assertEqual(response.status_code, 503)
@@ -62,7 +62,7 @@ class ChatApiTests(unittest.TestCase):
         )
         self.assertEqual(
             response.headers["access-control-allow-origin"],
-            "http://localhost:3000",
+            "http://localhost:3001",
         )
 
     @patch(
