@@ -8,6 +8,7 @@ backend/**/*.py[cod]
 backend/.pytest_cache/
 backend/*.db
 backend/*.sqlite*
+backend/uploads/
 
 # =========================
 # Node.js

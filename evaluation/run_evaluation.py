@@ -249,6 +249,13 @@ def prepare_document(
         None,
     )
 
+    if existing and existing["status"] == "failed":
+        requests.delete(
+            f"{base_url}/documents/{existing['document_id']}",
+            timeout=30,
+        ).raise_for_status()
+        existing = None
+
     if existing:
         return (
             wait_for_document(
@@ -301,12 +308,23 @@ def request_chat_with_retry(
             timeout=120,
         )
 
-        if response.status_code < 500:
-            response.raise_for_status()
+        if response.status_code < 400:
             return response.json()
 
+        retryable = (
+            response.status_code == 429
+            or response.status_code >= 500
+        )
+        if not retryable:
+            response.raise_for_status()
+
         if attempt < retries - 1:
-            delay = 30 * (attempt + 1)
+            retry_after = response.headers.get("Retry-After")
+            delay = (
+                int(retry_after)
+                if retry_after and retry_after.isdigit()
+                else 30 * (attempt + 1)
+            )
             print(
                 f"Chat request failed with "
                 f"HTTP {response.status_code}; "
@@ -328,11 +346,12 @@ def run_evaluation(args) -> dict:
         args.fixture,
     )
 
+    load_dotenv(ROOT / ".env")
     load_dotenv(ROOT / "backend" / ".env")
     api_key = os.getenv("GEMINI_API_KEY")
     model = os.getenv(
         "GEMINI_GENERATION_MODEL",
-        "gemini-3.5-flash",
+        "gemini-3.5-flash-lite",
     )
     judge_client = (
         genai.Client(api_key=api_key)
