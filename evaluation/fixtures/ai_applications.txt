@@ -1,0 +1,17 @@
+Artificial Intelligence in Healthcare and Finance
+
+Healthcare organizations use artificial intelligence to analyze medical images, support earlier disease detection, and help clinicians prepare personalized treatment plans. These systems assist medical professionals; they do not replace clinical judgment.
+
+Banks use machine learning to identify unusual transaction patterns and detect fraud in real time. Financial institutions also use conversational assistants to answer routine customer questions around the clock.
+---PAGE---
+Artificial Intelligence in Transportation and Retail
+
+Transportation systems use artificial intelligence to optimize traffic signals and recommend routes that reduce congestion. Autonomous driving research combines perception, planning, and safety systems, but human oversight and regulation remain important.
+
+Retailers use predictive models to recommend products based on customer preferences. Supply-chain teams forecast demand, plan inventory, and optimize delivery routes to reduce waste and delays.
+---PAGE---
+Responsible Artificial Intelligence
+
+Artificial intelligence systems can produce biased outcomes when their training data does not represent the people affected by a decision. Organizations should evaluate data quality, measure model performance across relevant groups, and provide ways for people to appeal important decisions.
+
+Privacy, transparency, and human oversight are central governance principles. Teams should document how a model is used, monitor it after deployment, protect sensitive data, and assign clear responsibility for failures.

@@ -1,0 +1,8 @@
+node_modules
+.next
+out
+.env*
+*.log
+coverage
+**/*.test.ts
+**/*.test.tsx

@@ -2,9 +2,13 @@
 # Python
 # =========================
 backend/.venv/
+**/__pycache__/
 backend/__pycache__/
 backend/**/*.py[cod]
 backend/.pytest_cache/
+backend/*.db
+backend/*.sqlite*
+backend/uploads/
 
 # =========================
 # Node.js
@@ -19,6 +23,7 @@ frontend/out/
 .env
 .env.local
 .env.*
+!.env.example
 
 # =========================
 # macOS
@@ -35,3 +40,6 @@ frontend/out/
 # Logs
 # =========================
 *.log
+
+# Evaluation output
+evaluation/results/

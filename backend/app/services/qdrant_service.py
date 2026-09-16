@@ -1,14 +1,26 @@
 from qdrant_client import QdrantClient
-from qdrant_client.http.models import VectorParams, Distance, PointStruct
 import uuid
-from qdrant_client.models import PointStruct, VectorParams, Distance
 
-client = QdrantClient(
-    host="localhost", 
-    port=6333,
+from qdrant_client.models import (
+    PointStruct,
+    VectorParams,
+    Distance,
+    Filter,
+    FieldCondition,
+    MatchValue,
 )
 
-COLLECTION_NAME = "documents"
+from app.core.config import settings
+
+
+client = QdrantClient(
+    host=settings.QDRANT_HOST,
+    port=settings.QDRANT_PORT,
+)
+
+
+COLLECTION_NAME = settings.QDRANT_COLLECTION_NAME
+
 
 def create_collection():
     collections = client.get_collections().collections
@@ -19,7 +31,7 @@ def create_collection():
         client.create_collection(
             collection_name=COLLECTION_NAME,
             vectors_config=VectorParams(
-                size=3072,
+                size=settings.EMBEDDING_DIMENSION,
                 distance=Distance.COSINE,
             ),
         )
@@ -29,7 +41,11 @@ def create_collection():
     else:
         print(f"Collection '{COLLECTION_NAME}' already exists.")
 
-def upsert_chunks(chunks: list[dict]):
+
+def upsert_chunks(
+    chunks: list[dict],
+    document_id: str,
+):
     points = []
 
     for chunk in chunks:
@@ -38,9 +54,13 @@ def upsert_chunks(chunks: list[dict]):
                 id=str(uuid.uuid4()),
                 vector=chunk["embedding"],
                 payload={
+                    "document_id": document_id,
+                    "chunk_index": chunk.get("chunk_index", chunk.get("id")),
                     "content": chunk["content"],
                     "start": chunk["start"],
                     "end": chunk["end"],
+                    "page_start": chunk.get("page_start"),
+                    "page_end": chunk.get("page_end"),
                 },
             )
         )
@@ -50,14 +70,51 @@ def upsert_chunks(chunks: list[dict]):
         points=points,
     )
 
-    print(f"Upserted {len(points)} chunks.")
+    print(
+        f"Upserted {len(points)} chunks "
+        f"for document {document_id}."
+    )
 
 
-def search_chunks(query_embedding: list[float], limit: int = 5):
+def search_chunks(
+    query_embedding: list[float],
+    document_id: str,
+    limit: int = 5,
+    score_threshold: float = 0.65,
+):
     search_result = client.query_points(
         collection_name=COLLECTION_NAME,
         query=query_embedding,
+        query_filter=Filter(
+            must=[
+                FieldCondition(
+                    key="document_id",
+                    match=MatchValue(value=document_id),
+                )
+            ]
+        ),
         limit=limit,
+        score_threshold=score_threshold,
     )
 
     return search_result.points
+
+
+def delete_document_chunks(
+    document_id: str,
+) -> None:
+    client.delete(
+        collection_name=COLLECTION_NAME,
+        points_selector=Filter(
+            must=[
+                FieldCondition(
+                    key="document_id",
+                    match=MatchValue(value=document_id),
+                )
+            ]
+        ),
+    )
+
+    print(
+        f"Deleted chunks for document {document_id}."
+    )
