@@ -205,7 +205,8 @@ See `.env.example`, `backend/.env.example`, and `frontend/.env.local.example`.
 Document endpoints:
 
 - `POST /upload/` — validate a PDF, create a `processing` document, and schedule ingestion.
-- `GET /upload/{filename}` — serve a stored PDF.
+- `GET /upload/{filename}` — serve a stored PDF by filename.
+- `GET /documents/{document_id}/file` — serve a stored PDF for the embedded viewer.
 - `GET /documents/` — list documents and processing states.
 - `DELETE /documents/{document_id}` — delete metadata, conversations, PDF, and vectors.
 

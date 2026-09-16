@@ -111,6 +111,7 @@ class RAGService:
                 "page_end": ranked.chunk.payload.get("page_end"),
             }
             for ranked in ranked_chunks
+            if ranked.score >= settings.RAG_RERANK_MIN_SCORE
         ]
 
         return {

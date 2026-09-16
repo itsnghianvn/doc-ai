@@ -2,6 +2,7 @@ import ReactMarkdown from "react-markdown";
 import { Bot, User } from "lucide-react";
 
 import { SourceCard } from "@/components/chat/source-card";
+import { filterSourcesByScore } from "@/lib/source-utils";
 import type { Source } from "@/types/chat";
 
 type ChatMessageProps = {
@@ -18,6 +19,7 @@ export function ChatMessage({
   onSourceClick,
 }: ChatMessageProps) {
   const isUser = role === "user";
+  const visibleSources = filterSourcesByScore(sources);
 
   return (
     <div
@@ -155,9 +157,7 @@ export function ChatMessage({
           </div>
 
           {/* Sources */}
-          {!isUser &&
-            sources &&
-            sources.length > 0 && (
+          {!isUser && visibleSources.length > 0 && (
               <div className="mt-4 border-t border-border pt-3">
                 <div className="mb-2 flex items-center justify-between">
                   <p className="text-xs font-semibold text-foreground">
@@ -165,15 +165,15 @@ export function ChatMessage({
                   </p>
 
                   <span className="text-xs text-muted-foreground">
-                    {sources.length}{" "}
-                    {sources.length === 1
+                    {visibleSources.length}{" "}
+                    {visibleSources.length === 1
                       ? "source"
                       : "sources"}
                   </span>
                 </div>
 
                 <div className="space-y-2">
-                  {sources.map((source) => (
+                  {visibleSources.map((source) => (
                     <SourceCard
                       key={source.chunk_id}
                       source={source}

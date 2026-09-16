@@ -127,12 +127,14 @@ Candidates:
 
     @staticmethod
     def fallback(chunks: list) -> list[RankedChunk]:
-        return [
+        ranked = [
             RankedChunk(
                 chunk=chunk,
                 score=float(chunk.score),
                 retrieval_score=float(chunk.score),
                 rerank_score=None,
             )
-            for chunk in chunks[:settings.RAG_RERANK_TOP_K]
+            for chunk in chunks
+            if float(chunk.score) >= settings.RAG_RERANK_MIN_SCORE
         ]
+        return ranked[: settings.RAG_RERANK_TOP_K]

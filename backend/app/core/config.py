@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     )
     RAG_RERANK_TOP_K: int = Field(default=5, ge=1, le=50)
     RAG_RERANK_MIN_SCORE: float = Field(
-        default=0.35,
+        default=0.55,
         ge=0,
         le=1,
     )

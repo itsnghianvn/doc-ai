@@ -64,10 +64,10 @@ export function PdfViewer({
     Math.max(page ?? 1, 1),
     totalPages
   );
-  const pdfUrl = document?.filename
-    ? `${process.env.NEXT_PUBLIC_API_URL}/upload/${encodeURIComponent(
-        document.filename
-      )}`
+  const pdfUrl = document?.document_id
+    ? `${process.env.NEXT_PUBLIC_API_URL}/documents/${encodeURIComponent(
+        document.document_id
+      )}/file`
     : null;
   const renderedLayerKey = document
     ? `${document.document_id}:${currentPage}`

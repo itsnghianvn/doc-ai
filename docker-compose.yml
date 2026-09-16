@@ -29,12 +29,12 @@ services:
       RAG_RETRIEVAL_TOP_N: ${RAG_RETRIEVAL_TOP_N:-10}
       RAG_RETRIEVAL_SCORE_THRESHOLD: ${RAG_RETRIEVAL_SCORE_THRESHOLD:-0.45}
       RAG_RERANK_TOP_K: ${RAG_RERANK_TOP_K:-5}
-      RAG_RERANK_MIN_SCORE: ${RAG_RERANK_MIN_SCORE:-0.35}
+      RAG_RERANK_MIN_SCORE: ${RAG_RERANK_MIN_SCORE:-0.55}
       RAG_RERANK_VECTOR_WEIGHT: ${RAG_RERANK_VECTOR_WEIGHT:-0.35}
     ports:
       - "8000:8000"
     volumes:
-      - uploaded_pdfs:/app/uploads
+      - ./backend/uploads:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -72,4 +72,3 @@ services:
 volumes:
   postgres_data:
   qdrant_data:
-  uploaded_pdfs:
