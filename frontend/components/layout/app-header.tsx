@@ -3,16 +3,20 @@
 import { useEffect, useRef } from "react";
 import {
   FileText,
+  History,
   LayoutDashboard,
   Loader2,
   Search,
+  Settings,
   Upload,
 } from "lucide-react";
 
+import type { SidebarSection } from "@/components/layout/sidebar";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
 import type { Document } from "@/types/document";
 
 type AppHeaderProps = {
+  activeSection: SidebarSection;
   documents: Document[];
   selectedDocument: Document | null;
   search: string;
@@ -23,9 +27,11 @@ type AppHeaderProps = {
   onSelectDocument: (document: Document) => void;
   onUploadClick: () => void;
   onOpenDashboard: () => void;
+  onSectionChange: (section: SidebarSection) => void;
 };
 
 export function AppHeader({
+  activeSection,
   documents,
   selectedDocument,
   search,
@@ -36,6 +42,7 @@ export function AppHeader({
   onSelectDocument,
   onUploadClick,
   onOpenDashboard,
+  onSectionChange,
 }: AppHeaderProps) {
   const searchRef = useRef<HTMLInputElement | null>(null);
 
@@ -58,7 +65,25 @@ export function AppHeader({
   return (
     <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border bg-card/95 px-3 sm:px-4 md:px-5">
       <div className="hidden min-w-0 flex-1 md:block">
-        {selectedDocument ? (
+        {activeSection === "chat-history" ? (
+          <div>
+            <h2 className="text-sm font-semibold text-foreground">
+              Chat history
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Conversations from all documents
+            </p>
+          </div>
+        ) : activeSection === "settings" ? (
+          <div>
+            <h2 className="text-sm font-semibold text-foreground">
+              Settings
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Preferences on this device
+            </p>
+          </div>
+        ) : selectedDocument ? (
           <div className="flex min-w-0 items-center gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
               <FileText size={17} />
@@ -96,10 +121,13 @@ export function AppHeader({
             (item) => item.document_id === event.target.value
           );
           if (document) {
+            onSectionChange("documents");
             onSelectDocument(document);
           }
         }}
-        className="min-w-0 flex-1 truncate rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none md:hidden"
+        className={`min-w-0 flex-1 truncate rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none md:hidden ${
+          activeSection !== "documents" ? "hidden" : ""
+        }`}
         aria-label="Select document"
       >
         {documents.length === 0 && (
@@ -115,7 +143,19 @@ export function AppHeader({
         ))}
       </select>
 
-      <label className="relative hidden w-full max-w-xs lg:block">
+      {activeSection !== "documents" && (
+        <p className="min-w-0 flex-1 truncate text-sm font-medium md:hidden">
+          {activeSection === "chat-history"
+            ? "Chat history"
+            : "Settings"}
+        </p>
+      )}
+
+      <label
+        className={`relative hidden w-full max-w-xs lg:block ${
+          activeSection !== "documents" ? "!hidden" : ""
+        }`}
+      >
         <Search
           size={14}
           className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"
@@ -143,7 +183,7 @@ export function AppHeader({
           </div>
         )}
 
-        {workspaceVisible && (
+        {workspaceVisible && activeSection === "documents" && (
           <button
             type="button"
             onClick={onOpenDashboard}
@@ -153,6 +193,31 @@ export function AppHeader({
             Dashboard
           </button>
         )}
+
+        <button
+          type="button"
+          onClick={() => onSectionChange("chat-history")}
+          className={`flex h-8 w-8 items-center justify-center rounded-lg transition md:hidden ${
+            activeSection === "chat-history"
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground hover:bg-muted"
+          }`}
+          aria-label="Chat history"
+        >
+          <History size={15} />
+        </button>
+        <button
+          type="button"
+          onClick={() => onSectionChange("settings")}
+          className={`flex h-8 w-8 items-center justify-center rounded-lg transition md:hidden ${
+            activeSection === "settings"
+              ? "bg-primary text-primary-foreground"
+              : "text-muted-foreground hover:bg-muted"
+          }`}
+          aria-label="Settings"
+        >
+          <Settings size={15} />
+        </button>
 
         <button
           type="button"

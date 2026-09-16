@@ -28,6 +28,10 @@ class Conversation(BaseModel):
     updated_at: datetime
 
 
+class ConversationWithDocument(Conversation):
+    document_filename: str | None = None
+
+
 class ConversationMessage(BaseModel):
     message_id: str
     conversation_id: str

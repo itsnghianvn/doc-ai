@@ -8,6 +8,10 @@ export type Conversation = {
   updated_at: string;
 };
 
+export type ConversationWithDocument = Conversation & {
+  document_filename?: string | null;
+};
+
 export type ConversationMessage = {
   message_id: string;
   conversation_id: string;

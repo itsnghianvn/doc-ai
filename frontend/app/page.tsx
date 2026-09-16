@@ -27,13 +27,25 @@ import { ChatWindow } from "@/components/chat/chat-window";
 import { DocumentDetailsPanel } from "@/components/dashboard/document-details-panel";
 import { DocumentReadyDashboard } from "@/components/dashboard/document-ready-dashboard";
 import { UploadDocument } from "@/components/document/upload-document";
+import { ChatHistoryView } from "@/components/history/chat-history-view";
 import { AppHeader } from "@/components/layout/app-header";
 import { AppShell } from "@/components/layout/app-shell";
-import { Sidebar } from "@/components/layout/sidebar";
+import {
+  Sidebar,
+  type SidebarSection,
+} from "@/components/layout/sidebar";
+import { SettingsView } from "@/components/settings/settings-view";
 import { cn } from "@/lib/utils";
+import {
+  readUserPreferences,
+  type UserPreferences,
+} from "@/lib/user-preferences";
 
 import type { Message, Source } from "@/types/chat";
-import type { Conversation } from "@/types/conversation";
+import type {
+  Conversation,
+  ConversationWithDocument,
+} from "@/types/conversation";
 import type { Document } from "@/types/document";
 
 type MobilePane = "document" | "chat";
@@ -77,6 +89,10 @@ export default function Home() {
   const [documentSearch, setDocumentSearch] = useState("");
   const [dashboardChatOpen, setDashboardChatOpen] =
     useState(false);
+  const [activeSection, setActiveSection] =
+    useState<SidebarSection>("documents");
+  const [userPreferences, setUserPreferences] =
+    useState<UserPreferences>(() => readUserPreferences());
 
   const [error, setError] = useState("");
 
@@ -378,6 +394,7 @@ export default function Home() {
   const handleSelectDocument = (
     document: Document
   ) => {
+    setActiveSection("documents");
     setSelectedDocument(document);
     setPdfPage(null);
     setActiveSource(null);
@@ -760,8 +777,84 @@ export default function Home() {
 
     setPdfPage(source.page_start);
     setActiveSource(source);
-    setMobilePane("document");
-    setAppView("workspace");
+
+    if (userPreferences.openWorkspaceOnSource) {
+      setMobilePane("document");
+      setAppView("workspace");
+    }
+  };
+
+  const openConversationFromHistory = async (
+    entry: ConversationWithDocument
+  ) => {
+    const document = documents.find(
+      (item) => item.document_id === entry.document_id
+    );
+
+    if (!document) {
+      setError("This document is no longer available.");
+      return;
+    }
+
+    setActiveSection("documents");
+    setSelectedDocument(document);
+    setPdfPage(null);
+    setActiveSource(null);
+    setAppView("dashboard");
+    setDashboardChatOpen(true);
+    setQuestion("");
+    setError("");
+
+    try {
+      const [availableConversations, storedMessages] =
+        await Promise.all([
+          getConversations(entry.document_id),
+          getConversationMessages(entry.conversation_id),
+        ]);
+
+      setConversations(availableConversations);
+      setSelectedConversation(
+        availableConversations.find(
+          (conversation) =>
+            conversation.conversation_id ===
+            entry.conversation_id
+        ) ?? entry
+      );
+      setMessages(
+        storedMessages.map((message) => ({
+          role: message.role,
+          content: message.content,
+          sources: message.sources ?? undefined,
+        }))
+      );
+    } catch (err) {
+      setError(
+        getApiErrorMessage(
+          err,
+          "Failed to open the conversation."
+        )
+      );
+    }
+  };
+
+  const handleDeleteConversationFromHistory = async (
+    conversationId: string
+  ) => {
+    await deleteConversation(conversationId);
+
+    if (
+      selectedConversation?.conversation_id ===
+      conversationId
+    ) {
+      const remaining = conversations.filter(
+        (conversation) =>
+          conversation.conversation_id !== conversationId
+      );
+      setConversations(remaining);
+      setSelectedConversation(remaining[0] ?? null);
+      setMessages([]);
+      setQuestion("");
+    }
   };
 
   const openWorkspace = (pane: MobilePane) => {
@@ -793,6 +886,7 @@ export default function Home() {
       />
 
       <Sidebar
+        activeSection={activeSection}
         documents={documents}
         selectedDocument={selectedDocument}
         onSelectDocument={handleSelectDocument}
@@ -800,12 +894,18 @@ export default function Home() {
         onUploadClick={handleUploadClick}
         search={documentSearch}
         onSearchChange={setDocumentSearch}
-        onOpenDashboard={() => setAppView("dashboard")}
+        onSectionChange={(section) => {
+          setActiveSection(section);
+          if (section === "documents") {
+            setAppView("dashboard");
+          }
+        }}
       />
 
       <div className="flex min-w-0 flex-1">
         <main className="flex min-w-0 flex-1 flex-col overflow-hidden">
           <AppHeader
+            activeSection={activeSection}
             documents={documents}
             selectedDocument={selectedDocument}
             search={documentSearch}
@@ -815,9 +915,19 @@ export default function Home() {
             onSearchChange={setDocumentSearch}
             onSelectDocument={handleSelectDocument}
             onUploadClick={handleUploadClick}
-            onOpenDashboard={() => setAppView("dashboard")}
+            onOpenDashboard={() => {
+              setActiveSection("documents");
+              setAppView("dashboard");
+            }}
+            onSectionChange={(section) => {
+              setActiveSection(section);
+              if (section === "documents") {
+                setAppView("dashboard");
+              }
+            }}
           />
 
+          {activeSection === "documents" && (
           <div className="grid grid-cols-3 border-b border-border bg-card p-1.5 md:hidden">
             <button
               type="button"
@@ -848,9 +958,24 @@ export default function Home() {
               Chat
             </button>
           </div>
+          )}
 
           <div className="min-h-0 flex-1">
-            {appView === "dashboard" ? (
+            {activeSection === "chat-history" ? (
+              <ChatHistoryView
+                onOpenConversation={(conversation) =>
+                  void openConversationFromHistory(conversation)
+                }
+                onDeleteConversation={
+                  handleDeleteConversationFromHistory
+                }
+              />
+            ) : activeSection === "settings" ? (
+              <SettingsView
+                preferences={userPreferences}
+                onPreferencesChange={setUserPreferences}
+              />
+            ) : appView === "dashboard" ? (
               dashboardChatOpen ? (
                 <div className="h-full p-3 md:p-5">
                   <ChatWindow
@@ -941,7 +1066,8 @@ export default function Home() {
           </div>
         </main>
 
-        {appView === "dashboard" && (
+        {appView === "dashboard" &&
+          activeSection === "documents" && (
           <DocumentDetailsPanel
             document={selectedDocument}
             conversations={conversations}

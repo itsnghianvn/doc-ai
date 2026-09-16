@@ -5,6 +5,7 @@ from sqlalchemy.orm import Session
 
 from app.db.models import (
     ConversationModel,
+    DocumentModel,
     MessageModel,
     utc_now,
 )
@@ -67,6 +68,31 @@ def get_conversation(
         if conversation
         else None
     )
+
+
+def list_all_conversations(
+    db: Session,
+    *,
+    limit: int = 100,
+) -> list[dict]:
+    rows = db.execute(
+        select(ConversationModel, DocumentModel.filename)
+        .join(
+            DocumentModel,
+            ConversationModel.document_id
+            == DocumentModel.document_id,
+        )
+        .order_by(ConversationModel.updated_at.desc())
+        .limit(limit)
+    ).all()
+
+    return [
+        {
+            **_conversation_to_dict(conversation),
+            "document_filename": filename,
+        }
+        for conversation, filename in rows
+    ]
 
 
 def list_conversations(

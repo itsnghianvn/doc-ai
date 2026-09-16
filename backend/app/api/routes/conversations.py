@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.db.database import get_db
@@ -7,11 +7,13 @@ from app.schemas.conversation import (
     ConversationCreate,
     ConversationMessage,
     ConversationUpdate,
+    ConversationWithDocument,
 )
 from app.services.conversation_service import (
     create_conversation,
     delete_conversation,
     get_conversation,
+    list_all_conversations,
     list_conversations,
     list_messages,
     rename_conversation,
@@ -20,6 +22,17 @@ from app.services.document_service import get_document
 
 
 router = APIRouter(tags=["Conversations"])
+
+
+@router.get(
+    "/conversations",
+    response_model=list[ConversationWithDocument],
+)
+def get_all_conversations(
+    limit: int = Query(default=100, ge=1, le=500),
+    db: Session = Depends(get_db),
+):
+    return list_all_conversations(db, limit=limit)
 
 
 @router.get(

@@ -4,6 +4,7 @@ import type { ChatResponse, Message } from "@/types/chat";
 import type {
   Conversation,
   ConversationMessage,
+  ConversationWithDocument,
 } from "@/types/conversation";
 import type { Document } from "@/types/document";
 
@@ -71,6 +72,16 @@ export const getDocuments = async (): Promise<Document[]> => {
 
 export const deleteDocument = async (documentId: string) => {
   const response = await api.delete(`/documents/${documentId}`);
+  return response.data;
+};
+
+export const getAllConversations = async (
+  limit = 100,
+): Promise<ConversationWithDocument[]> => {
+  const response = await api.get<ConversationWithDocument[]>(
+    "/conversations",
+    { params: { limit } }
+  );
   return response.data;
 };
 

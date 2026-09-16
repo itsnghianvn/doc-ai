@@ -11,8 +11,15 @@ import {
 
 import type { Document } from "@/types/document";
 import { DocumentList } from "@/components/document/document-list";
+import { cn } from "@/lib/utils";
+
+export type SidebarSection =
+  | "documents"
+  | "chat-history"
+  | "settings";
 
 type SidebarProps = {
+  activeSection: SidebarSection;
   documents: Document[];
   selectedDocument: Document | null;
   onSelectDocument: (document: Document) => void;
@@ -20,10 +27,11 @@ type SidebarProps = {
   onUploadClick: () => void;
   search: string;
   onSearchChange: (value: string) => void;
-  onOpenDashboard: () => void;
+  onSectionChange: (section: SidebarSection) => void;
 };
 
 export function Sidebar({
+  activeSection,
   documents,
   selectedDocument,
   onSelectDocument,
@@ -31,13 +39,21 @@ export function Sidebar({
   onUploadClick,
   search,
   onSearchChange,
-  onOpenDashboard,
+  onSectionChange,
 }: SidebarProps) {
   const filteredDocuments = documents.filter((document) =>
     document.filename
       .toLowerCase()
       .includes((search ?? "").toLowerCase())
   );
+
+  const navClass = (section: SidebarSection) =>
+    cn(
+      "flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium transition",
+      activeSection === section
+        ? "bg-sidebar-accent text-sidebar-accent-foreground"
+        : "text-muted-foreground hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
+    );
 
   return (
     <aside className="hidden h-screen w-[260px] shrink-0 flex-col border-r border-sidebar-border bg-sidebar text-sidebar-foreground md:flex xl:w-[280px]">
@@ -62,26 +78,24 @@ export function Sidebar({
       <nav className="space-y-1 px-3 pb-3">
         <button
           type="button"
-          onClick={onOpenDashboard}
-          className="flex w-full items-center gap-2.5 rounded-lg bg-sidebar-accent px-3 py-2 text-xs font-medium text-sidebar-accent-foreground"
+          onClick={() => onSectionChange("documents")}
+          className={navClass("documents")}
         >
           <FileText size={14} />
           Documents
         </button>
         <button
           type="button"
-          disabled
-          title="Global chat history is not available yet"
-          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground opacity-60"
+          onClick={() => onSectionChange("chat-history")}
+          className={navClass("chat-history")}
         >
           <History size={14} />
           Chat History
         </button>
         <button
           type="button"
-          disabled
-          title="Settings are not available yet"
-          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-xs font-medium text-muted-foreground opacity-60"
+          onClick={() => onSectionChange("settings")}
+          className={navClass("settings")}
         >
           <Settings size={14} />
           Settings

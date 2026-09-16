@@ -13,6 +13,7 @@ from app.services.conversation_service import (
     create_conversation,
     delete_conversation,
     get_history,
+    list_all_conversations,
     list_conversations,
     list_messages,
     rename_conversation,
@@ -107,6 +108,22 @@ class ConversationServiceTests(unittest.TestCase):
             list_conversations(self.db, "document-123"),
             [],
         )
+
+    def test_list_all_conversations_includes_document_filename(self):
+        conversation = create_conversation(
+            self.db,
+            "document-123",
+            title="Multimodal overview",
+        )
+
+        results = list_all_conversations(self.db)
+
+        self.assertEqual(len(results), 1)
+        self.assertEqual(
+            results[0]["conversation_id"],
+            conversation["conversation_id"],
+        )
+        self.assertEqual(results[0]["document_filename"], "guide.pdf")
 
     def test_rag_history_is_limited_to_recent_messages(self):
         conversation = create_conversation(
