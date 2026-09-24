@@ -4,7 +4,21 @@ Full-stack Retrieval-Augmented Generation (RAG) application for asking grounded 
 
 DocAI is a portfolio project focused on practical AI engineering: page-aware document processing, semantic retrieval, reranking, citations, evaluation, asynchronous ingestion, relational persistence, testing, and containerized deployment.
 
-![DocAI document workspace](docs/screenshots/docai-workspace.png)
+![DocAI workspace with cited sources](docs/screenshots/workspace-sources.png)
+
+## Screenshots
+
+| Dashboard | Upload and chat |
+| --- | --- |
+| ![DocAI dashboard](docs/screenshots/dashboard.png) | ![DocAI upload and chat](docs/screenshots/upload-chat.png) |
+
+| Grounded answers | Workspace sources |
+| --- | --- |
+| ![DocAI chat with citations](docs/screenshots/chat-DocAI-1.png) | ![DocAI chat follow-up](docs/screenshots/chat-DocAI-2.png) |
+
+| Chat history |
+| --- |
+| ![DocAI chat history](docs/screenshots/chat-history.png) |
 
 ## What it does
 
